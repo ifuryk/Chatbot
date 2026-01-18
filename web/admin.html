@@ -1,774 +1,1022 @@
 <!DOCTYPE html>
-<html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DM Bot Admin</title>
-    <style>
-      body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #0f1115;
-        color: #e6e6e6;
-      }
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 24px;
-        border-bottom: 1px solid #222;
-        gap: 16px;
-        flex-wrap: wrap;
-      }
-      main {
-        padding: 24px;
-        display: grid;
-        gap: 16px;
-      }
-      .grid {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      }
-      .card {
-        background: #171a23;
-        border: 1px solid #222;
-        border-radius: 10px;
-        padding: 16px;
-      }
-      h2 {
-        margin-top: 0;
-      }
-      label {
-        font-size: 12px;
-        opacity: 0.7;
-      }
-      input,
-      select,
-      textarea {
-        width: 100%;
-        padding: 8px;
-        margin-top: 6px;
-        background: #0f1115;
-        border: 1px solid #333;
-        color: #e6e6e6;
-        border-radius: 6px;
-      }
-      textarea {
-        min-height: 90px;
-      }
-      button {
-        margin-top: 8px;
-        padding: 10px 14px;
-        background: #2b61ff;
-        border: none;
-        color: #fff;
-        border-radius: 6px;
-        cursor: pointer;
-      }
-      button.secondary {
-        background: #2a2f3a;
-      }
-      button[disabled] {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-      .row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 8px;
-        border-radius: 999px;
-        background: #1b1f2a;
-        font-size: 12px;
-      }
-      .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #999;
-      }
-      pre {
-        background: #0f1115;
-        border: 1px solid #333;
-        padding: 12px;
-        border-radius: 6px;
-        max-height: 260px;
-        overflow: auto;
-      }
-      .small {
-        font-size: 12px;
-        opacity: 0.7;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <div>
-        <strong>DM Bot Admin</strong>
-        <span class="status-pill"><span id="botDot" class="dot"></span>Bot <span id="botStatus">OFF</span></span>
-        <span class="status-pill">Learning <span id="learningStatus">OFF</span></span>
-        <span class="small" id="buildTs"></span>
-      </div>
-      <div class="row">
-        <div>
-          <label>WEB_TOKEN</label>
-          <input id="tokenInput" placeholder="x-web-token" />
-        </div>
-        <div>
-          <label>x-user-id</label>
-          <input id="userIdInput" placeholder="web" />
-        </div>
-      </div>
-    </header>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DM Copilot Admin</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1117;
+      --panel: #171a22;
+      --panel-2: #1f2430;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #2a3140;
+      --accent: #7dd3fc;
+      --accent-2: #a78bfa;
+      --danger: #f87171;
+      --success: #34d399;
+      --warning: #fbbf24;
+    }
 
-    <main>
-      <div class="card">
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #151a28 0%, #141722 100%);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.4px;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .control {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .control input,
+    .control select,
+    .control textarea {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 8px;
+      min-width: 180px;
+    }
+
+    .control input[type="checkbox"] {
+      min-width: auto;
+    }
+
+    nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 16px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav button {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    nav button.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1120;
+      border-color: transparent;
+    }
+
+    main {
+      padding: 24px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .tab {
+      display: none;
+      gap: 20px;
+    }
+
+    .tab.active {
+      display: grid;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .panel h2 {
+      margin: 0 0 6px;
+      font-size: 16px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .row > * {
+      flex: 1 1 auto;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #0b1120;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button.danger {
+      background: var(--danger);
+      color: #0b1120;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .status {
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .status.ok {
+      color: var(--success);
+    }
+
+    .status.warn {
+      color: var(--warning);
+    }
+
+    .status.err {
+      color: var(--danger);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    pre {
+      background: #0b0f1a;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      overflow: auto;
+      max-height: 300px;
+      color: #d1d5db;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .log-output {
+      white-space: pre-wrap;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+      font-size: 12px;
+      max-height: 360px;
+      overflow: auto;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>DM Copilot Admin</h1>
+      <div class="pill" id="connectionStatus">Disconnected</div>
+    </div>
+    <div class="header-controls">
+      <label class="control">
+        Web Token
+        <input id="tokenInput" type="password" placeholder="x-web-token" />
+      </label>
+      <label class="control">
+        User ID
+        <input id="userIdInput" type="text" placeholder="web" />
+      </label>
+      <label class="control">
+        Auto Refresh
+        <select id="refreshSelect">
+          <option value="off">Off</option>
+          <option value="3000">3s</option>
+          <option value="6000">6s</option>
+          <option value="10000">10s</option>
+        </select>
+      </label>
+      <button class="primary" id="connectBtn">Connect</button>
+    </div>
+  </header>
+
+  <nav id="tabNav">
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="girls">Girls</button>
+    <button data-tab="messages">Messages</button>
+    <button data-tab="context">Context</button>
+    <button data-tab="notes">Notes</button>
+    <button data-tab="stats">Stats</button>
+    <button data-tab="data">Data</button>
+    <button data-tab="settings">Settings</button>
+    <button data-tab="logs">Logs</button>
+    <button data-tab="chat">Chat</button>
+  </nav>
+
+  <main>
+    <section id="tab-dashboard" class="tab active">
+      <div class="panel">
         <h2>Status</h2>
+        <div class="status" id="statusSummary">Awaiting connection.</div>
+        <div class="grid-2">
+          <div>
+            <strong>Active Girl</strong>
+            <div id="statusGirl">-</div>
+          </div>
+          <div>
+            <strong>Stage</strong>
+            <div id="statusStage">-</div>
+          </div>
+          <div>
+            <strong>Learning</strong>
+            <div id="statusLearning">-</div>
+          </div>
+          <div>
+            <strong>Settings</strong>
+            <div id="statusSettings">-</div>
+          </div>
+        </div>
         <div class="row">
-          <button id="refreshStatus">Обновить статус</button>
-          <label class="row" style="align-items:center;gap:6px;">
-            <input type="checkbox" id="autoRefresh" checked />
-            Auto refresh (5s)
+          <button class="primary" id="refreshStatusBtn">Refresh Status</button>
+          <button class="secondary" id="saveBtn">Save Store</button>
+          <button class="secondary" id="reloadBtn">Reload Store</button>
+          <button class="danger" id="panicBtn">Panic</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Users</h2>
+        <div class="row">
+          <button class="primary" id="loadUsersBtn">Load Users</button>
+        </div>
+        <pre id="usersOutput">No data.</pre>
+      </div>
+    </section>
+
+    <section id="tab-girls" class="tab">
+      <div class="panel">
+        <h2>Girls</h2>
+        <div class="row">
+          <button class="primary" id="loadGirlsBtn">Load Girls</button>
+          <label class="control">
+            Active Girl
+            <select id="activeGirlSelect"></select>
+          </label>
+          <button class="secondary" id="setActiveGirlBtn">Set Active</button>
+        </div>
+        <pre id="girlsOutput">No data.</pre>
+      </div>
+    </section>
+
+    <section id="tab-messages" class="tab">
+      <div class="panel">
+        <h2>Generate Replies</h2>
+        <label class="control">
+          Her Message
+          <textarea id="herMessageInput" placeholder="Paste her message..."></textarea>
+        </label>
+        <div class="row">
+          <button class="primary" id="generateBtn">Generate</button>
+          <button class="secondary" id="analyzeBtn">Analyze Last</button>
+        </div>
+        <pre id="suggestionsOutput">No suggestions yet.</pre>
+        <div class="row">
+          <button class="secondary" data-commit="best">Commit Best</button>
+          <button class="secondary" data-commit="alt1">Commit Alt1</button>
+          <button class="secondary" data-commit="alt2">Commit Alt2</button>
+          <button class="secondary" data-commit="alt3">Commit Alt3</button>
+        </div>
+        <label class="control">
+          Manual Commit
+          <textarea id="commitTextInput" placeholder="Manually pick/override a reply"></textarea>
+        </label>
+        <button class="secondary" id="commitManualBtn">Commit Manual</button>
+      </div>
+      <div class="panel">
+        <h2>Tweaks & Outcome</h2>
+        <div class="row">
+          <button class="secondary" data-tweak="short">Shorter</button>
+          <button class="secondary" data-tweak="funny">Funner</button>
+          <button class="secondary" data-tweak="bolder">Bolder</button>
+          <button class="secondary" data-tweak="invite">Invite</button>
+          <button class="secondary" data-tweak="why">Why</button>
+        </div>
+        <div class="row">
+          <button class="secondary" data-outcome="replied">Replied</button>
+          <button class="secondary" data-outcome="strongReplied">Strong Replied</button>
+          <button class="secondary" data-outcome="datePlanned">Date Planned</button>
+          <button class="secondary" data-outcome="date">Date</button>
+          <button class="secondary" data-outcome="ghost">Ghost</button>
+        </div>
+        <pre id="messageMetaOutput">No metadata.</pre>
+      </div>
+    </section>
+
+    <section id="tab-context" class="tab">
+      <div class="panel">
+        <h2>Context</h2>
+        <textarea id="contextInput" placeholder="Current context"></textarea>
+        <div class="row">
+          <button class="primary" id="loadContextBtn">Load Context</button>
+          <button class="secondary" id="saveContextBtn">Save Context</button>
+          <button class="secondary" id="resetContextBtn">Reset Context</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-notes" class="tab">
+      <div class="panel">
+        <h2>Notes</h2>
+        <textarea id="noteInput" placeholder="Add note"></textarea>
+        <div class="row">
+          <button class="primary" id="addNoteBtn">Add Note</button>
+          <button class="secondary" id="loadNotesBtn">Load Notes</button>
+        </div>
+        <pre id="notesOutput">No notes.</pre>
+      </div>
+    </section>
+
+    <section id="tab-stats" class="tab">
+      <div class="panel">
+        <h2>Stats</h2>
+        <div class="row">
+          <button class="primary" id="loadStatsBtn">Load Stats</button>
+          <button class="secondary" id="resetStatsBtn">Reset Stats</button>
+        </div>
+        <pre id="statsOutput">No stats.</pre>
+      </div>
+    </section>
+
+    <section id="tab-data" class="tab">
+      <div class="panel">
+        <h2>Data Store</h2>
+        <textarea id="dataEditor" placeholder="JSON data"></textarea>
+        <div class="row">
+          <button class="primary" id="loadDataBtn">Load Data</button>
+          <button class="secondary" id="saveDataBtn">Save Data</button>
+          <button class="secondary" id="exportDataBtn">Export JSON</button>
+          <button class="secondary" id="backupBtn">Create Backup</button>
+        </div>
+        <pre id="backupOutput">No backups yet.</pre>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab">
+      <div class="panel">
+        <h2>Settings</h2>
+        <div class="grid-2">
+          <label class="control">
+            Autopick
+            <select id="autopickSelect">
+              <option value="true">On</option>
+              <option value="false">Off</option>
+            </select>
+          </label>
+          <label class="control">
+            Pacing
+            <select id="pacingSelect">
+              <option value="warm">Warm</option>
+              <option value="fast">Fast</option>
+            </select>
+          </label>
+          <label class="control">
+            Autoghost Hours
+            <input id="autoghostInput" type="number" min="0" max="720" step="1" />
+          </label>
+          <label class="control">
+            Learning Enabled
+            <select id="learningSelect">
+              <option value="true">On</option>
+              <option value="false">Off</option>
+            </select>
+          </label>
+          <label class="control">
+            Learning Debug
+            <select id="learnDebugSelect">
+              <option value="true">On</option>
+              <option value="false">Off</option>
+            </select>
           </label>
         </div>
-        <pre id="statusBox">—</pre>
-      </div>
-
-      <div class="grid">
-        <div class="card">
-          <h2>Learning</h2>
-          <div class="row">
-            <button id="learnOn">Learn ON</button>
-            <button id="learnOff" class="secondary">Learn OFF</button>
-            <button id="learnDebugOn">Debug ON</button>
-            <button id="learnDebugOff" class="secondary">Debug OFF</button>
-            <button id="resetLearn" class="secondary">Reset Learn</button>
-          </div>
-          <button id="showProfile">Показать профиль</button>
-          <pre id="profileBox">—</pre>
+        <div class="row">
+          <button class="primary" id="saveSettingsBtn">Save Settings</button>
+          <button class="secondary" id="resetLearningBtn">Reset Learning</button>
         </div>
+        <div class="panel">
+          <h2>Tune Weights</h2>
+          <div class="row">
+            <input id="tuneKeyInput" type="text" placeholder="weight key (warmth, humor...)" />
+            <input id="tuneValueInput" type="number" step="0.05" min="-1" max="1" placeholder="value" />
+            <button class="secondary" id="tuneBtn">Apply</button>
+          </div>
+          <pre id="tuneOutput">No tuning yet.</pre>
+        </div>
+      </div>
+    </section>
 
-        <div class="card">
-          <h2>Настройки</h2>
-          <div class="row">
-            <button id="autopickOn">Autopick ON</button>
-            <button id="autopickOff" class="secondary">Autopick OFF</button>
+    <section id="tab-logs" class="tab">
+      <div class="panel">
+        <h2>Logs</h2>
+        <div class="row">
+          <label class="control">
+            Lines
+            <input id="logLinesInput" type="number" min="50" max="2000" value="200" />
+          </label>
+          <button class="primary" id="loadLogsBtn">Load Logs</button>
+        </div>
+        <div class="grid-2">
+          <div>
+            <h3>stdout</h3>
+            <pre id="logsOut" class="log-output">No logs.</pre>
           </div>
-          <div class="row">
-            <button id="pacingWarm">Pacing warm</button>
-            <button id="pacingFast" class="secondary">Pacing fast</button>
-          </div>
-          <div class="row">
-            <input id="autoghostHours" placeholder="autoghost hours or 0" />
-            <button id="setAutoghost">Apply</button>
-            <button id="autoghostOff" class="secondary">Off</button>
-          </div>
-          <div class="card" style="margin-top:12px;">
-            <h3>Weights (0..1)</h3>
-            <div>
-              <label>warmth</label>
-              <input type="range" min="0" max="1" step="0.01" id="wWarmth" />
-              <span id="wWarmthVal" class="small"></span>
-            </div>
-            <div>
-              <label>brevity</label>
-              <input type="range" min="0" max="1" step="0.01" id="wBrevity" />
-              <span id="wBrevityVal" class="small"></span>
-            </div>
-            <div>
-              <label>humor</label>
-              <input type="range" min="0" max="1" step="0.01" id="wHumor" />
-              <span id="wHumorVal" class="small"></span>
-            </div>
-            <div>
-              <label>curiosity</label>
-              <input type="range" min="0" max="1" step="0.01" id="wCuriosity" />
-              <span id="wCuriosityVal" class="small"></span>
-            </div>
-            <div>
-              <label>flirt</label>
-              <input type="range" min="0" max="1" step="0.01" id="wFlirt" />
-              <span id="wFlirtVal" class="small"></span>
-            </div>
-            <div>
-              <label>inviteRate</label>
-              <input type="range" min="0" max="1" step="0.01" id="wInvite" />
-              <span id="wInviteVal" class="small"></span>
-            </div>
-            <button id="applyWeights">Apply weights</button>
+          <div>
+            <h3>stderr</h3>
+            <pre id="logsErr" class="log-output">No logs.</pre>
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="grid">
-        <div class="card">
-          <h2>Диалог</h2>
-          <label>Её сообщение</label>
-          <textarea id="herMessage"></textarea>
-          <button id="generateReplies">Generate replies</button>
-          <pre id="suggestionsBox">—</pre>
-          <div class="row">
-            <button id="tweakShort">Короче</button>
-            <button id="tweakFunny">Смешнее</button>
-            <button id="tweakBolder">Смелее</button>
-            <button id="tweakInvite">Пригласи</button>
-            <button id="tweakWhy" class="secondary">Почему</button>
-          </div>
-          <h3>Я отправил</h3>
-          <div class="row">
-            <button id="commitBest">Best</button>
-            <button id="commitAlt1">Alt1</button>
-            <button id="commitAlt2">Alt2</button>
-            <button id="commitAlt3">Alt3</button>
-          </div>
-          <label>Отправил вручную</label>
-          <textarea id="manualReply"></textarea>
-          <button id="commitManual">Commit manual</button>
-          <h3>Исход</h3>
-          <div class="row">
-            <button id="outReplied">Она ответила</button>
-            <button id="outStrong">Ответила с интересом</button>
-            <button id="outDatePlanned">Дошли до встречи</button>
-            <button id="outDate">Встреча</button>
-            <button id="outGhost" class="secondary">Пропала</button>
-          </div>
+    <section id="tab-chat" class="tab">
+      <div class="panel">
+        <h2>Chat Tester</h2>
+        <label class="control">
+          System Prompt
+          <textarea id="chatSystemInput" placeholder="System prompt"></textarea>
+        </label>
+        <label class="control">
+          Message
+          <textarea id="chatMessageInput" placeholder="User message"></textarea>
+        </label>
+        <div class="grid-3">
+          <label class="control">
+            Temperature
+            <input id="chatTempInput" type="number" step="0.1" min="0" max="2" value="0.6" />
+          </label>
+          <label class="control">
+            Max Output Tokens
+            <input id="chatTokensInput" type="number" min="64" max="2048" value="256" />
+          </label>
         </div>
-
-        <div class="card">
-          <h2>Девушки / контекст / заметки</h2>
-          <label>Список девушек</label>
-          <select id="girlsList"></select>
-          <div class="row">
-            <button id="refreshGirls">Обновить список</button>
-            <button id="applyGirl">Сделать активной</button>
-          </div>
-          <label>Новая/активная девушка</label>
-          <input id="newGirlName" placeholder="Имя" />
-          <button id="createGirl">Создать/выбрать</button>
-          <label>Контекст</label>
-          <textarea id="contextText"></textarea>
-          <div class="row">
-            <button id="applyContext">Сохранить контекст</button>
-            <button id="resetDialog" class="secondary">/reset</button>
-          </div>
-          <label>Заметки (последние)</label>
-          <pre id="notesBox">—</pre>
-          <textarea id="noteInput" placeholder="Новая заметка"></textarea>
-          <button id="addNote">Добавить заметку</button>
-        </div>
+        <button class="primary" id="chatSendBtn">Run Chat</button>
+        <pre id="chatOutput">No output.</pre>
       </div>
+    </section>
+  </main>
 
-      <div class="grid">
-        <div class="card">
-          <h2>Analytics / Plans</h2>
-          <div class="row">
-            <button id="btnAnalyze">/analyze</button>
-            <button id="btnFlags">/flags</button>
-            <button id="btnDateplan">/dateplan</button>
-          </div>
-        </div>
-        <div class="card">
-          <h2>Messaging</h2>
-          <label>/sent</label>
-          <textarea id="sentText"></textarea>
-          <button id="btnSent">Send</button>
-          <label>/reengage (hours)</label>
-          <input id="reengageHours" placeholder="24" />
-          <button id="btnReengage">Run</button>
-        </div>
-        <div class="card">
-          <h2>Stats / Modes</h2>
-          <div class="row">
-            <button id="btnStats">/stats</button>
-            <button id="btnGstats">/gstats</button>
-            <button id="btnModes">/modes</button>
-            <button id="btnGmodes">/gmodes</button>
-          </div>
-          <pre id="statsBox">—</pre>
-        </div>
-      </div>
+  <script>
+    const state = {
+      token: localStorage.getItem('webToken') || '',
+      userId: localStorage.getItem('userId') || 'web',
+      refreshMs: localStorage.getItem('refreshMs') || 'off',
+      refreshTimer: null,
+    };
 
-      <div class="grid">
-        <div class="card">
-          <h2>Export / Backup</h2>
-          <div class="row">
-            <button id="btnExport">Export</button>
-            <button id="btnDownloadExport" class="secondary">Download export</button>
-          </div>
-          <div class="row">
-            <button id="btnBackup">Create backup</button>
-            <input id="backupName" placeholder="backup filename" />
-            <button id="btnDownloadBackup" class="secondary">Download backup</button>
-          </div>
-          <pre id="exportBox">—</pre>
-        </div>
-        <div class="card">
-          <h2>Command Runner</h2>
-          <input id="commandInput" placeholder="/girl Masha" />
-          <button id="runCommand">Run</button>
-        </div>
-        <div class="card">
-          <h2>Output / Log</h2>
-          <pre id="logBox">—</pre>
-        </div>
-      </div>
-    </main>
+    const tokenInput = document.getElementById('tokenInput');
+    const userIdInput = document.getElementById('userIdInput');
+    const refreshSelect = document.getElementById('refreshSelect');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const statusSummary = document.getElementById('statusSummary');
+    const statusGirl = document.getElementById('statusGirl');
+    const statusStage = document.getElementById('statusStage');
+    const statusLearning = document.getElementById('statusLearning');
+    const statusSettings = document.getElementById('statusSettings');
 
-    <script>
-      const BUILD_TS = new Date().toISOString();
-      document.getElementById('buildTs').textContent = `Build: ${BUILD_TS}`;
+    tokenInput.value = state.token;
+    userIdInput.value = state.userId;
+    refreshSelect.value = state.refreshMs;
 
-      const tokenInput = document.getElementById('tokenInput');
-      const userIdInput = document.getElementById('userIdInput');
-      tokenInput.value = localStorage.getItem('webToken') || '';
-      userIdInput.value = localStorage.getItem('webUserId') || 'web';
+    function setStatus(text, tone = '') {
+      statusSummary.textContent = text;
+      statusSummary.className = `status ${tone}`.trim();
+    }
 
-      tokenInput.addEventListener('input', () => localStorage.setItem('webToken', tokenInput.value.trim()));
-      userIdInput.addEventListener('input', () => localStorage.setItem('webUserId', userIdInput.value.trim() || 'web'));
+    function setConnection(text, tone = '') {
+      connectionStatus.textContent = text;
+      connectionStatus.className = `pill ${tone}`.trim();
+    }
 
-      const logBox = document.getElementById('logBox');
-      const statusBox = document.getElementById('statusBox');
-      const botStatus = document.getElementById('botStatus');
-      const botDot = document.getElementById('botDot');
-      const learningStatus = document.getElementById('learningStatus');
-      const statsBox = document.getElementById('statsBox');
-      const suggestionsBox = document.getElementById('suggestionsBox');
-      const exportBox = document.getElementById('exportBox');
-      const profileBox = document.getElementById('profileBox');
+    function headers() {
+      return {
+        'Content-Type': 'application/json',
+        'x-web-token': state.token,
+        'x-user-id': state.userId,
+      };
+    }
 
-      function setLog(payload) {
-        logBox.textContent = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+    async function apiFetch(path, options = {}) {
+      const response = await fetch(path, {
+        ...options,
+        headers: { ...headers(), ...(options.headers || {}) },
+      });
+      const contentType = response.headers.get('content-type') || '';
+      let payload;
+      if (contentType.includes('application/json')) {
+        payload = await response.json();
+      } else {
+        payload = await response.text();
       }
-
-      async function apiFetch(path, options = {}) {
-        const token = localStorage.getItem('webToken') || '';
-        const userId = localStorage.getItem('webUserId') || 'web';
-        const headers = options.headers || {};
-        headers['x-web-token'] = token;
-        headers['x-user-id'] = userId;
-        if (options.body) {
-          headers['Content-Type'] = 'application/json';
-        }
-        const res = await fetch(path, { ...options, headers });
-        if (res.status === 401) {
-          throw new Error('Неверный WEB_TOKEN');
-        }
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || 'Request failed');
-        }
-        return res.json();
+      if (!response.ok) {
+        const message = payload?.error || payload || 'Request failed';
+        throw new Error(message);
       }
+      return payload;
+    }
 
-      async function withButton(button, fn) {
-        button.disabled = true;
-        try {
-          const result = await fn();
-          setLog(result);
-          return result;
-        } catch (err) {
-          setLog({ error: err.message });
-          throw err;
-        } finally {
-          button.disabled = false;
+    async function refreshStatus() {
+      try {
+        const data = await apiFetch('/api/status');
+        statusGirl.textContent = data.activeGirl || '-';
+        statusStage.textContent = data.stage || '-';
+        statusLearning.textContent = `enabled=${data.learning?.enabled} debug=${data.learning?.debug}`;
+        statusSettings.textContent = JSON.stringify(data.settings || {});
+        setStatus('Connected', 'ok');
+        setConnection('Connected', 'ok');
+        hydrateSettings(data);
+      } catch (error) {
+        setStatus(error.message, 'err');
+        setConnection('Disconnected', 'warn');
+      }
+    }
+
+    function hydrateSettings(data) {
+      if (!data) return;
+      document.getElementById('autopickSelect').value = String(Boolean(data.settings?.autopick));
+      document.getElementById('pacingSelect').value = data.settings?.pacing || 'warm';
+      document.getElementById('autoghostInput').value = data.settings?.autoghostHours ?? 0;
+      document.getElementById('learningSelect').value = String(Boolean(data.learning?.enabled));
+      document.getElementById('learnDebugSelect').value = String(Boolean(data.learning?.debug));
+    }
+
+    function savePrefs() {
+      state.token = tokenInput.value.trim();
+      state.userId = userIdInput.value.trim() || 'web';
+      state.refreshMs = refreshSelect.value;
+      localStorage.setItem('webToken', state.token);
+      localStorage.setItem('userId', state.userId);
+      localStorage.setItem('refreshMs', state.refreshMs);
+    }
+
+    function updateRefreshTimer() {
+      if (state.refreshTimer) {
+        clearInterval(state.refreshTimer);
+        state.refreshTimer = null;
+      }
+      if (state.refreshMs !== 'off') {
+        const interval = Number(state.refreshMs);
+        if (Number.isFinite(interval) && interval > 0) {
+          state.refreshTimer = setInterval(() => {
+            refreshStatus();
+            loadLogs();
+          }, interval);
         }
       }
+    }
 
-      function updateWeightLabel(id, value) {
-        document.getElementById(id).textContent = value.toFixed(2);
+    document.getElementById('connectBtn').addEventListener('click', async () => {
+      savePrefs();
+      updateRefreshTimer();
+      await refreshStatus();
+    });
+
+    refreshSelect.addEventListener('change', () => {
+      savePrefs();
+      updateRefreshTimer();
+    });
+
+    document.getElementById('refreshStatusBtn').addEventListener('click', refreshStatus);
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      try {
+        await apiFetch('/api/save', { method: 'POST', body: '{}' });
+        setStatus('Store saved', 'ok');
+      } catch (error) {
+        setStatus(error.message, 'err');
       }
-
-      async function refreshStatus() {
-        try {
-          const data = await apiFetch('/api/status');
-          statusBox.textContent = JSON.stringify(data, null, 2);
-          botStatus.textContent = 'ON';
-          botDot.style.background = '#2bff88';
-          learningStatus.textContent = data.learning.enabled ? 'ON' : 'OFF';
-          setWeightSliders(data.learning.weights);
-          await refreshGirls();
-          await refreshNotes();
-          return data;
-        } catch (err) {
-          botStatus.textContent = 'OFF';
-          botDot.style.background = '#ff5555';
-          learningStatus.textContent = 'OFF';
-          setLog({ error: err.message });
-        }
+    });
+    document.getElementById('reloadBtn').addEventListener('click', async () => {
+      try {
+        await apiFetch('/api/reload', { method: 'POST', body: '{}' });
+        setStatus('Store reloaded', 'ok');
+      } catch (error) {
+        setStatus(error.message, 'err');
       }
+    });
+    document.getElementById('panicBtn').addEventListener('click', async () => {
+      try {
+        await apiFetch('/api/panic', { method: 'POST', body: '{}' });
+        setStatus('Panic acknowledged', 'warn');
+      } catch (error) {
+        setStatus(error.message, 'err');
+      }
+    });
 
-      async function refreshGirls() {
+    document.getElementById('loadUsersBtn').addEventListener('click', async () => {
+      const output = document.getElementById('usersOutput');
+      try {
+        const data = await apiFetch('/api/users');
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        output.textContent = error.message;
+      }
+    });
+
+    document.getElementById('loadGirlsBtn').addEventListener('click', async () => {
+      const output = document.getElementById('girlsOutput');
+      const select = document.getElementById('activeGirlSelect');
+      try {
         const data = await apiFetch('/api/girls');
-        const list = document.getElementById('girlsList');
-        list.innerHTML = '';
+        output.textContent = JSON.stringify(data, null, 2);
+        select.innerHTML = '';
         data.girls.forEach((name) => {
           const option = document.createElement('option');
           option.value = name;
           option.textContent = name;
           if (name === data.active) option.selected = true;
-          list.appendChild(option);
+          select.appendChild(option);
         });
-        const ctx = await apiFetch('/api/context');
-        document.getElementById('contextText').value = ctx.context || '';
+      } catch (error) {
+        output.textContent = error.message;
       }
+    });
 
-      async function refreshNotes() {
-        const res = await apiFetch('/api/notes');
-        const notes = (res.notes || []).slice(-20);
-        document.getElementById('notesBox').textContent = JSON.stringify(notes, null, 2);
-      }
-
-      function setWeightSliders(weights) {
-        const map = {
-          wWarmth: 'warmth',
-          wBrevity: 'brevity',
-          wHumor: 'humor',
-          wCuriosity: 'curiosity',
-          wFlirt: 'flirt',
-          wInvite: 'inviteRate',
-        };
-        Object.entries(map).forEach(([id, key]) => {
-          const slider = document.getElementById(id);
-          const value = weights?.[key] ?? 0;
-          slider.value = value;
-          updateWeightLabel(`${id}Val`, Number(value));
+    document.getElementById('setActiveGirlBtn').addEventListener('click', async () => {
+      const select = document.getElementById('activeGirlSelect');
+      try {
+        const data = await apiFetch('/api/girls/active', {
+          method: 'POST',
+          body: JSON.stringify({ name: select.value }),
         });
+        document.getElementById('girlsOutput').textContent = JSON.stringify(data, null, 2);
+        await refreshStatus();
+      } catch (error) {
+        document.getElementById('girlsOutput').textContent = error.message;
       }
+    });
 
-      document.getElementById('refreshStatus').addEventListener('click', () =>
-        withButton(document.getElementById('refreshStatus'), refreshStatus)
-      );
+    document.getElementById('generateBtn').addEventListener('click', async () => {
+      const message = document.getElementById('herMessageInput').value;
+      const output = document.getElementById('suggestionsOutput');
+      try {
+        const data = await apiFetch('/api/message/generate', {
+          method: 'POST',
+          body: JSON.stringify({ text: message }),
+        });
+        output.textContent = data.suggestions || JSON.stringify(data, null, 2);
+        document.getElementById('messageMetaOutput').textContent = JSON.stringify(data, null, 2);
+        await refreshStatus();
+      } catch (error) {
+        output.textContent = error.message;
+      }
+    });
 
-      document.getElementById('learnOn').addEventListener('click', () =>
-        withButton(document.getElementById('learnOn'), () => apiFetch('/api/learn', { method: 'POST', body: JSON.stringify({ enabled: true }) }))
-      );
-      document.getElementById('learnOff').addEventListener('click', () =>
-        withButton(document.getElementById('learnOff'), () => apiFetch('/api/learn', { method: 'POST', body: JSON.stringify({ enabled: false }) }))
-      );
-      document.getElementById('learnDebugOn').addEventListener('click', () =>
-        withButton(document.getElementById('learnDebugOn'), () => apiFetch('/api/learn_debug', { method: 'POST', body: JSON.stringify({ enabled: true }) }))
-      );
-      document.getElementById('learnDebugOff').addEventListener('click', () =>
-        withButton(document.getElementById('learnDebugOff'), () => apiFetch('/api/learn_debug', { method: 'POST', body: JSON.stringify({ enabled: false }) }))
-      );
-      document.getElementById('resetLearn').addEventListener('click', () =>
-        withButton(document.getElementById('resetLearn'), () => apiFetch('/api/reset_learn', { method: 'POST' }))
-      );
+    document.getElementById('analyzeBtn').addEventListener('click', async () => {
+      const output = document.getElementById('messageMetaOutput');
+      try {
+        const data = await apiFetch('/api/message/analyzeLast', { method: 'POST', body: '{}' });
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        output.textContent = error.message;
+      }
+    });
 
-      document.getElementById('showProfile').addEventListener('click', () =>
-        withButton(document.getElementById('showProfile'), async () => {
-          const res = await apiFetch('/api/profile');
-          profileBox.textContent = JSON.stringify(res, null, 2);
-          return res;
-        })
-      );
-
-      document.getElementById('autopickOn').addEventListener('click', () =>
-        withButton(document.getElementById('autopickOn'), () => apiFetch('/api/autopick', { method: 'POST', body: JSON.stringify({ enabled: true }) }))
-      );
-      document.getElementById('autopickOff').addEventListener('click', () =>
-        withButton(document.getElementById('autopickOff'), () => apiFetch('/api/autopick', { method: 'POST', body: JSON.stringify({ enabled: false }) }))
-      );
-
-      document.getElementById('pacingWarm').addEventListener('click', () =>
-        withButton(document.getElementById('pacingWarm'), () => apiFetch('/api/pacing', { method: 'POST', body: JSON.stringify({ pacing: 'warm' }) }))
-      );
-      document.getElementById('pacingFast').addEventListener('click', () =>
-        withButton(document.getElementById('pacingFast'), () => apiFetch('/api/pacing', { method: 'POST', body: JSON.stringify({ pacing: 'fast' }) }))
-      );
-
-      document.getElementById('setAutoghost').addEventListener('click', () =>
-        withButton(document.getElementById('setAutoghost'), () => {
-          const hours = Number(document.getElementById('autoghostHours').value);
-          return apiFetch('/api/autoghost', { method: 'POST', body: JSON.stringify({ hours }) });
-        })
-      );
-      document.getElementById('autoghostOff').addEventListener('click', () =>
-        withButton(document.getElementById('autoghostOff'), () => apiFetch('/api/autoghost', { method: 'POST', body: JSON.stringify({ hours: 0 }) }))
-      );
-
-      document.getElementById('applyWeights').addEventListener('click', () =>
-        withButton(document.getElementById('applyWeights'), async () => {
-          const weights = {
-            warmth: Number(document.getElementById('wWarmth').value),
-            brevity: Number(document.getElementById('wBrevity').value),
-            humor: Number(document.getElementById('wHumor').value),
-            curiosity: Number(document.getElementById('wCuriosity').value),
-            flirt: Number(document.getElementById('wFlirt').value),
-            inviteRate: Number(document.getElementById('wInvite').value),
-          };
-          const results = {};
-          for (const [key, value] of Object.entries(weights)) {
-            const res = await apiFetch('/api/tune', { method: 'POST', body: JSON.stringify({ key, value }) });
-            results[key] = res.value;
-          }
-          return results;
-        })
-      );
-
-      ['wWarmth', 'wBrevity', 'wHumor', 'wCuriosity', 'wFlirt', 'wInvite'].forEach((id) => {
-        const slider = document.getElementById(id);
-        slider.addEventListener('input', () => updateWeightLabel(`${id}Val`, Number(slider.value)));
-      });
-
-      document.getElementById('generateReplies').addEventListener('click', () =>
-        withButton(document.getElementById('generateReplies'), async () => {
-          const text = document.getElementById('herMessage').value;
-          const res = await apiFetch('/api/message/generate', { method: 'POST', body: JSON.stringify({ text }) });
-          suggestionsBox.textContent = res.suggestions || '—';
-          await refreshStatus();
-          return res;
-        })
-      );
-
-      const tweakMap = {
-        tweakShort: 'short',
-        tweakFunny: 'funny',
-        tweakBolder: 'bolder',
-        tweakInvite: 'invite',
-        tweakWhy: 'why',
-      };
-      Object.entries(tweakMap).forEach(([id, type]) => {
-        document.getElementById(id).addEventListener('click', () =>
-          withButton(document.getElementById(id), async () => {
-            const res = await apiFetch('/api/message/tweak', { method: 'POST', body: JSON.stringify({ type }) });
-            suggestionsBox.textContent = res.suggestions || '—';
-            await refreshStatus();
-            return res;
-          })
-        );
-      });
-
-      document.getElementById('commitBest').addEventListener('click', () =>
-        withButton(document.getElementById('commitBest'), async () => {
-          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ which: 'best' }) });
-          await refreshStatus();
-          return res;
-        })
-      );
-      document.getElementById('commitAlt1').addEventListener('click', () =>
-        withButton(document.getElementById('commitAlt1'), async () => {
-          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ which: 'alt1' }) });
-          await refreshStatus();
-          return res;
-        })
-      );
-      document.getElementById('commitAlt2').addEventListener('click', () =>
-        withButton(document.getElementById('commitAlt2'), async () => {
-          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ which: 'alt2' }) });
-          await refreshStatus();
-          return res;
-        })
-      );
-      document.getElementById('commitAlt3').addEventListener('click', () =>
-        withButton(document.getElementById('commitAlt3'), async () => {
-          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ which: 'alt3' }) });
-          await refreshStatus();
-          return res;
-        })
-      );
-      document.getElementById('commitManual').addEventListener('click', () =>
-        withButton(document.getElementById('commitManual'), async () => {
-          const text = document.getElementById('manualReply').value;
-          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ text }) });
-          await refreshStatus();
-          return res;
-        })
-      );
-
-      const outcomeMap = {
-        outReplied: 'replied',
-        outStrong: 'strongReplied',
-        outDatePlanned: 'datePlanned',
-        outDate: 'date',
-        outGhost: 'ghost',
-      };
-      Object.entries(outcomeMap).forEach(([id, outcome]) => {
-        document.getElementById(id).addEventListener('click', () =>
-          withButton(document.getElementById(id), async () => {
-            const res = await apiFetch('/api/message/outcome', { method: 'POST', body: JSON.stringify({ outcome }) });
-            await refreshStatus();
-            await refreshStats();
-            return res;
-          })
-        );
-      });
-
-      document.getElementById('refreshGirls').addEventListener('click', () =>
-        withButton(document.getElementById('refreshGirls'), refreshGirls)
-      );
-      document.getElementById('applyGirl').addEventListener('click', () =>
-        withButton(document.getElementById('applyGirl'), async () => {
-          const name = document.getElementById('girlsList').value;
-          const res = await apiFetch('/api/girls/active', { method: 'POST', body: JSON.stringify({ name }) });
-          await refreshGirls();
-          return res;
-        })
-      );
-      document.getElementById('createGirl').addEventListener('click', () =>
-        withButton(document.getElementById('createGirl'), async () => {
-          const name = document.getElementById('newGirlName').value.trim();
-          const res = await apiFetch('/api/girls/active', { method: 'POST', body: JSON.stringify({ name }) });
-          await refreshGirls();
-          return res;
-        })
-      );
-
-      document.getElementById('applyContext').addEventListener('click', () =>
-        withButton(document.getElementById('applyContext'), () => {
-          const text = document.getElementById('contextText').value;
-          return apiFetch('/api/context', { method: 'POST', body: JSON.stringify({ text }) });
-        })
-      );
-      document.getElementById('resetDialog').addEventListener('click', () =>
-        withButton(document.getElementById('resetDialog'), () => apiFetch('/api/reset', { method: 'POST' }))
-      );
-
-      document.getElementById('addNote').addEventListener('click', () =>
-        withButton(document.getElementById('addNote'), async () => {
-          const text = document.getElementById('noteInput').value;
-          const res = await apiFetch('/api/notes', { method: 'POST', body: JSON.stringify({ text }) });
-          await refreshNotes();
-          return res;
-        })
-      );
-
-      document.getElementById('btnAnalyze').addEventListener('click', () =>
-        withButton(document.getElementById('btnAnalyze'), () => apiFetch('/api/message/analyzeLast', { method: 'POST' }))
-      );
-      document.getElementById('btnFlags').addEventListener('click', () =>
-        withButton(document.getElementById('btnFlags'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/flags' }) }))
-      );
-      document.getElementById('btnDateplan').addEventListener('click', () =>
-        withButton(document.getElementById('btnDateplan'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/dateplan' }) }))
-      );
-
-      document.getElementById('btnSent').addEventListener('click', () =>
-        withButton(document.getElementById('btnSent'), () => {
-          const text = document.getElementById('sentText').value;
-          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: `/sent ${text}` }) });
-        })
-      );
-      document.getElementById('btnReengage').addEventListener('click', () =>
-        withButton(document.getElementById('btnReengage'), () => {
-          const hours = document.getElementById('reengageHours').value.trim();
-          const cmd = hours ? `/reengage ${hours}` : '/reengage';
-          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: cmd }) });
-        })
-      );
-
-      document.getElementById('btnStats').addEventListener('click', () =>
-        withButton(document.getElementById('btnStats'), async () => {
-          const res = await apiFetch('/api/stats');
-          statsBox.textContent = JSON.stringify(res, null, 2);
-          return res;
-        })
-      );
-      document.getElementById('btnGstats').addEventListener('click', () =>
-        withButton(document.getElementById('btnGstats'), async () => {
-          const res = await apiFetch('/api/gstats');
-          statsBox.textContent = JSON.stringify(res, null, 2);
-          return res;
-        })
-      );
-      document.getElementById('btnModes').addEventListener('click', () =>
-        withButton(document.getElementById('btnModes'), async () => {
-          const res = await apiFetch('/api/modes');
-          statsBox.textContent = JSON.stringify(res, null, 2);
-          return res;
-        })
-      );
-      document.getElementById('btnGmodes').addEventListener('click', () =>
-        withButton(document.getElementById('btnGmodes'), async () => {
-          const res = await apiFetch('/api/gmodes');
-          statsBox.textContent = JSON.stringify(res, null, 2);
-          return res;
-        })
-      );
-
-      document.getElementById('btnExport').addEventListener('click', () =>
-        withButton(document.getElementById('btnExport'), async () => {
-          const res = await apiFetch('/api/export');
-          exportBox.textContent = JSON.stringify(res, null, 2);
-          return res;
-        })
-      );
-      document.getElementById('btnDownloadExport').addEventListener('click', async () => {
+    document.querySelectorAll('[data-commit]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const which = btn.dataset.commit;
         try {
-          const res = await apiFetch('/api/export');
-          const blob = new Blob([JSON.stringify(res, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'data.json';
-          link.click();
-          URL.revokeObjectURL(url);
-        } catch (err) {
-          setLog({ error: err.message });
-        }
-      });
-      document.getElementById('btnBackup').addEventListener('click', () =>
-        withButton(document.getElementById('btnBackup'), async () => {
-          const res = await apiFetch('/api/backup', { method: 'POST' });
-          document.getElementById('backupName').value = res.name || '';
-          return res;
-        })
-      );
-      document.getElementById('btnDownloadBackup').addEventListener('click', async () => {
-        const name = document.getElementById('backupName').value.trim();
-        if (!name) return;
-        try {
-          const token = localStorage.getItem('webToken') || '';
-          const userId = localStorage.getItem('webUserId') || 'web';
-          const res = await fetch(`/api/backup/${encodeURIComponent(name)}`, {
-            headers: { 'x-web-token': token, 'x-user-id': userId },
+          const data = await apiFetch('/api/message/commit', {
+            method: 'POST',
+            body: JSON.stringify({ which }),
           });
-          if (!res.ok) {
-            setLog({ error: 'Backup not found' });
-            return;
-          }
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = name;
-          link.click();
-          URL.revokeObjectURL(url);
-        } catch (err) {
-          setLog({ error: err.message });
+          document.getElementById('messageMetaOutput').textContent = JSON.stringify(data, null, 2);
+          await refreshStatus();
+        } catch (error) {
+          document.getElementById('messageMetaOutput').textContent = error.message;
         }
       });
+    });
 
-      document.getElementById('runCommand').addEventListener('click', () =>
-        withButton(document.getElementById('runCommand'), () => {
-          const command = document.getElementById('commandInput').value.trim();
-          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command }) });
-        })
-      );
-
-      async function refreshStats() {
-        const res = await apiFetch('/api/stats');
-        statsBox.textContent = JSON.stringify(res, null, 2);
+    document.getElementById('commitManualBtn').addEventListener('click', async () => {
+      const text = document.getElementById('commitTextInput').value;
+      try {
+        const data = await apiFetch('/api/message/commit', {
+          method: 'POST',
+          body: JSON.stringify({ text }),
+        });
+        document.getElementById('messageMetaOutput').textContent = JSON.stringify(data, null, 2);
+        await refreshStatus();
+      } catch (error) {
+        document.getElementById('messageMetaOutput').textContent = error.message;
       }
+    });
 
-      let refreshTimer = null;
-      function startAutoRefresh() {
-        if (refreshTimer) clearInterval(refreshTimer);
-        refreshTimer = setInterval(refreshStatus, 5000);
-      }
-      document.getElementById('autoRefresh').addEventListener('change', (e) => {
-        if (e.target.checked) startAutoRefresh();
-        else if (refreshTimer) clearInterval(refreshTimer);
+    document.querySelectorAll('[data-tweak]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const type = btn.dataset.tweak;
+        try {
+          const data = await apiFetch('/api/message/tweak', {
+            method: 'POST',
+            body: JSON.stringify({ type }),
+          });
+          document.getElementById('suggestionsOutput').textContent = data.suggestions || JSON.stringify(data, null, 2);
+          document.getElementById('messageMetaOutput').textContent = JSON.stringify(data, null, 2);
+          await refreshStatus();
+        } catch (error) {
+          document.getElementById('messageMetaOutput').textContent = error.message;
+        }
       });
+    });
 
-      refreshStatus();
-      startAutoRefresh();
-    </script>
-  </body>
+    document.querySelectorAll('[data-outcome]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const outcome = btn.dataset.outcome;
+        try {
+          const data = await apiFetch('/api/message/outcome', {
+            method: 'POST',
+            body: JSON.stringify({ outcome }),
+          });
+          document.getElementById('messageMetaOutput').textContent = JSON.stringify(data, null, 2);
+          await refreshStatus();
+        } catch (error) {
+          document.getElementById('messageMetaOutput').textContent = error.message;
+        }
+      });
+    });
+
+    document.getElementById('loadContextBtn').addEventListener('click', async () => {
+      try {
+        const data = await apiFetch('/api/context');
+        document.getElementById('contextInput').value = data.context || '';
+      } catch (error) {
+        document.getElementById('contextInput').value = error.message;
+      }
+    });
+
+    document.getElementById('saveContextBtn').addEventListener('click', async () => {
+      const text = document.getElementById('contextInput').value;
+      try {
+        await apiFetch('/api/context', {
+          method: 'POST',
+          body: JSON.stringify({ text }),
+        });
+        setStatus('Context saved', 'ok');
+      } catch (error) {
+        setStatus(error.message, 'err');
+      }
+    });
+
+    document.getElementById('resetContextBtn').addEventListener('click', async () => {
+      try {
+        const data = await apiFetch('/api/context/reset', { method: 'POST', body: '{}' });
+        document.getElementById('contextInput').value = data.context || '';
+      } catch (error) {
+        document.getElementById('contextInput').value = error.message;
+      }
+    });
+
+    document.getElementById('addNoteBtn').addEventListener('click', async () => {
+      const text = document.getElementById('noteInput').value;
+      try {
+        await apiFetch('/api/notes', {
+          method: 'POST',
+          body: JSON.stringify({ text }),
+        });
+        document.getElementById('noteInput').value = '';
+        await loadNotes();
+      } catch (error) {
+        document.getElementById('notesOutput').textContent = error.message;
+      }
+    });
+
+    async function loadNotes() {
+      try {
+        const data = await apiFetch('/api/notes');
+        document.getElementById('notesOutput').textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        document.getElementById('notesOutput').textContent = error.message;
+      }
+    }
+
+    document.getElementById('loadNotesBtn').addEventListener('click', loadNotes);
+
+    document.getElementById('loadStatsBtn').addEventListener('click', async () => {
+      const output = document.getElementById('statsOutput');
+      try {
+        const stats = await apiFetch('/api/stats');
+        const gstats = await apiFetch('/api/gstats');
+        const score = await apiFetch('/api/score');
+        const gscore = await apiFetch('/api/gscore');
+        const modes = await apiFetch('/api/modes');
+        const gmodes = await apiFetch('/api/gmodes');
+        output.textContent = JSON.stringify({ stats, gstats, score, gscore, modes, gmodes }, null, 2);
+      } catch (error) {
+        output.textContent = error.message;
+      }
+    });
+
+    document.getElementById('resetStatsBtn').addEventListener('click', async () => {
+      try {
+        await apiFetch('/api/reset-stats', { method: 'POST', body: '{}' });
+        document.getElementById('statsOutput').textContent = 'Stats reset.';
+      } catch (error) {
+        document.getElementById('statsOutput').textContent = error.message;
+      }
+    });
+
+    document.getElementById('loadDataBtn').addEventListener('click', async () => {
+      try {
+        const data = await apiFetch('/api/data');
+        document.getElementById('dataEditor').value = JSON.stringify(data, null, 2);
+      } catch (error) {
+        document.getElementById('dataEditor').value = error.message;
+      }
+    });
+
+    document.getElementById('saveDataBtn').addEventListener('click', async () => {
+      const text = document.getElementById('dataEditor').value;
+      try {
+        const payload = JSON.parse(text);
+        await apiFetch('/api/data', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        document.getElementById('backupOutput').textContent = 'Data saved.';
+      } catch (error) {
+        document.getElementById('backupOutput').textContent = error.message;
+      }
+    });
+
+    document.getElementById('exportDataBtn').addEventListener('click', () => {
+      window.open('/api/export', '_blank');
+    });
+
+    document.getElementById('backupBtn').addEventListener('click', async () => {
+      try {
+        const data = await apiFetch('/api/backup', { method: 'POST', body: '{}' });
+        document.getElementById('backupOutput').textContent = `Backup created: ${data.name}`;
+      } catch (error) {
+        document.getElementById('backupOutput').textContent = error.message;
+      }
+    });
+
+    document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+      const payload = {
+        autopick: document.getElementById('autopickSelect').value === 'true',
+        pacing: document.getElementById('pacingSelect').value,
+        autoghostHours: Number(document.getElementById('autoghostInput').value),
+        learning: document.getElementById('learningSelect').value === 'true',
+        learnDebug: document.getElementById('learnDebugSelect').value === 'true',
+      };
+      try {
+        const data = await apiFetch('/api/settings', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        document.getElementById('tuneOutput').textContent = JSON.stringify(data, null, 2);
+        await refreshStatus();
+      } catch (error) {
+        document.getElementById('tuneOutput').textContent = error.message;
+      }
+    });
+
+    document.getElementById('resetLearningBtn').addEventListener('click', async () => {
+      try {
+        const data = await apiFetch('/api/reset_learn', { method: 'POST', body: '{}' });
+        document.getElementById('tuneOutput').textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        document.getElementById('tuneOutput').textContent = error.message;
+      }
+    });
+
+    document.getElementById('tuneBtn').addEventListener('click', async () => {
+      const key = document.getElementById('tuneKeyInput').value.trim();
+      const value = Number(document.getElementById('tuneValueInput').value);
+      try {
+        const data = await apiFetch('/api/tune', {
+          method: 'POST',
+          body: JSON.stringify({ key, value }),
+        });
+        document.getElementById('tuneOutput').textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        document.getElementById('tuneOutput').textContent = error.message;
+      }
+    });
+
+    document.getElementById('loadLogsBtn').addEventListener('click', loadLogs);
+
+    async function loadLogs() {
+      const lines = document.getElementById('logLinesInput').value || 200;
+      try {
+        const data = await apiFetch(`/api/logs?lines=${encodeURIComponent(lines)}`);
+        document.getElementById('logsOut').textContent = (data.out || []).join('\n');
+        document.getElementById('logsErr').textContent = (data.err || []).join('\n');
+      } catch (error) {
+        document.getElementById('logsOut').textContent = error.message;
+        document.getElementById('logsErr').textContent = '';
+      }
+    }
+
+    document.getElementById('chatSendBtn').addEventListener('click', async () => {
+      const payload = {
+        system: document.getElementById('chatSystemInput').value,
+        message: document.getElementById('chatMessageInput').value,
+        temperature: Number(document.getElementById('chatTempInput').value),
+        max_output_tokens: Number(document.getElementById('chatTokensInput').value),
+      };
+      try {
+        const data = await apiFetch('/api/chat', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        document.getElementById('chatOutput').textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        document.getElementById('chatOutput').textContent = error.message;
+      }
+    });
+
+    document.querySelectorAll('#tabNav button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#tabNav button').forEach((b) => b.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach((tab) => tab.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    savePrefs();
+    updateRefreshTimer();
+  </script>
+</body>
 </html>
