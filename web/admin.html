@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DM Copilot — Admin</title>
+  <style>
+    :root{
+      --bg:#0b0f19;
+      --panel:#111827;
+      --panel2:#0f172a;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --line:#1f2937;
+      --good:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --accent:#60a5fa;
+      --accent2:#a78bfa;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --r:16px;
+      --r2:12px;
+      --pad:16px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background: radial-gradient(1200px 800px at 20% -10%, rgba(96,165,250,.25), transparent 60%),
+                  radial-gradient(1000px 700px at 90% 0%, rgba(167,139,250,.20), transparent 55%),
+                  linear-gradient(180deg, var(--bg), #070a12 70%);
+      min-height:100vh;
+    }
+    a{ color:var(--accent); text-decoration:none; }
+    .wrap{ max-width:1100px; margin:0 auto; padding:22px 16px 48px; }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:14px 14px; border:1px solid var(--line); border-radius:var(--r);
+      background: rgba(17,24,39,.65); backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      position: sticky; top: 10px; z-index: 10;
+    }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .logo{
+      width:38px; height:38px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(96,165,250,.9), rgba(167,139,250,.9));
+      box-shadow: 0 10px 25px rgba(96,165,250,.15);
+    }
+    .title{ line-height:1.1; }
+    .title b{ display:block; font-size:14px; letter-spacing:.2px; }
+    .title span{ display:block; font-size:12px; color:var(--muted); margin-top:2px; }
+    .right{
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .chip{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:999px;
+      border:1px solid var(--line); background: rgba(15,23,42,.55);
+      color:var(--muted); font-size:12px;
+    }
+    .dot{ width:9px; height:9px; border-radius:99px; background: var(--muted); }
+    .dot.good{ background: var(--good); }
+    .dot.bad{ background: var(--bad); }
+    .dot.warn{ background: var(--warn); }
+
+    .token{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px; border-radius:999px;
+      border:1px solid var(--line); background: rgba(15,23,42,.55);
+    }
+    .token input{
+      width:160px; max-width:50vw;
+      background: transparent; border:0; outline:0;
+      color:var(--text); font-size:12px;
+    }
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(15,23,42,.7);
+      color:var(--text);
+      padding:9px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      transition:.15s transform, .15s opacity, .15s background;
+      font-size:12px;
+    }
+    .btn:hover{ transform: translateY(-1px); background: rgba(31,41,55,.7); }
+    .btn:active{ transform: translateY(0); opacity:.9; }
+    .btn.primary{ background: linear-gradient(135deg, rgba(96,165,250,.85), rgba(167,139,250,.75)); border-color: transparent; }
+    .btn.danger{ background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.35); }
+    .btn.ghost{ background: transparent; }
+    .btn.small{ padding:7px 10px; border-radius:10px; }
+
+    .grid{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 920px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+    .card{
+      border:1px solid var(--line);
+      border-radius: var(--r);
+      background: rgba(17,24,39,.58);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card h3{
+      margin:0;
+      padding:14px 14px;
+      border-bottom:1px solid var(--line);
+      font-size:13px;
+      letter-spacing:.2px;
+      background: rgba(15,23,42,.45);
+    }
+    .card .content{ padding: 14px; }
+    .muted{ color: var(--muted); font-size:12px; }
+    .kvs{ display:grid; grid-template-columns: 1fr; gap:10px; }
+    .kv{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:10px 12px; border-radius: 14px; border:1px solid var(--line);
+      background: rgba(15,23,42,.55);
+      font-size:12px;
+    }
+    .kv b{ font-weight:600; color:var(--text); }
+    .kv span{ color:var(--muted); }
+    .hr{ height:1px; background: var(--line); margin: 14px 0; }
+
+    .tabs{ display:flex; gap:8px; flex-wrap:wrap; padding: 12px; border-bottom:1px solid var(--line); background: rgba(15,23,42,.45);}
+    .tab{
+      padding:9px 12px; border-radius: 999px;
+      border:1px solid var(--line); background: rgba(15,23,42,.55);
+      font-size:12px; color: var(--muted); cursor:pointer;
+    }
+    .tab.active{ color: var(--text); border-color: rgba(96,165,250,.55); background: rgba(96,165,250,.12); }
+    .pane{ display:none; }
+    .pane.active{ display:block; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .field{
+      display:flex; flex-direction:column; gap:6px;
+      min-width: 180px; flex: 1;
+    }
+    .field label{ font-size:12px; color: var(--muted); }
+    .field input, .field select, .field textarea{
+      width:100%;
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: rgba(15,23,42,.55);
+      color: var(--text);
+      outline: none;
+      font-size:12px;
+    }
+    .field textarea{ min-height: 120px; resize: vertical; }
+    .hint{ font-size:12px; color: var(--muted); margin-top:6px; }
+
+    .out{
+      margin-top:12px;
+      border-radius: var(--r);
+      border:1px solid var(--line);
+      background: rgba(3,7,18,.55);
+      padding: 12px;
+      overflow:auto;
+      max-height: 360px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #cbd5e1;
+      white-space: pre;
+    }
+    .toast{
+      position: fixed; bottom: 18px; right: 18px;
+      min-width: 220px; max-width: 420px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      background: rgba(17,24,39,.9);
+      box-shadow: var(--shadow);
+      display:none;
+      font-size:12px;
+      color: var(--text);
+    }
+    .toast.show{ display:block; }
+    .badge{
+      padding:4px 8px; border-radius:999px; font-size:11px;
+      border:1px solid var(--line);
+      background: rgba(15,23,42,.55);
+      color: var(--muted);
+    }
+    .badge.good{ border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.12); color:#bbf7d0; }
+    .badge.warn{ border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.12); color:#fde68a; }
+    .badge.bad{ border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.12); color:#fecaca; }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">
+        <b>DM Copilot — Admin</b>
+        <span id="subtitle">Web панель управления ботом</span>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="chip" title="Статус API">
+        <div id="apiDot" class="dot"></div>
+        <span id="apiText">API: неизвестно</span>
+      </div>
+
+      <div class="token" title="WEB_TOKEN (x-web-token)">
+        <span class="muted">token</span>
+        <input id="token" type="password" placeholder="WEB_TOKEN" />
+        <button class="btn small ghost" id="toggleToken">показать</button>
+      </div>
+
+      <button class="btn primary" id="btnRefresh">Обновить</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: QUICK STATUS -->
+    <div class="card">
+      <h3>Быстрый статус</h3>
+      <div class="content">
+        <div class="kvs">
+          <div class="kv"><b>Bot</b><span id="botStatus">—</span></div>
+          <div class="kv"><b>Learning</b><span id="learnStatus">—</span></div>
+          <div class="kv"><b>Server time</b><span id="serverTime">—</span></div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <button class="btn" id="btnLearnOn">Включить обучение</button>
+          <button class="btn" id="btnLearnOff">Выключить</button>
+        </div>
+
+        <div class="hint">
+          Токен — это <span class="badge">WEB_TOKEN</span> из твоего <span class="badge">.env</span>.
+          Он передаётся в заголовке <span class="badge">x-web-token</span>.
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: TABS -->
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" data-tab="tab-dashboard">Dashboard</button>
+        <button class="tab" data-tab="tab-tools">Инструменты</button>
+        <button class="tab" data-tab="tab-chat">Тест-чат</button>
+        <button class="tab" data-tab="tab-debug">Debug</button>
+      </div>
+
+      <div class="content">
+        <!-- DASHBOARD -->
+        <div class="pane active" id="tab-dashboard">
+          <div class="row" style="justify-content:space-between;">
+            <div class="muted">
+              Здесь — базовая телеметрия и быстрые переключатели.
+            </div>
+            <div class="row">
+              <span class="badge" id="badgeApi">API</span>
+              <span class="badge" id="badgeLearn">LEARN</span>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="kvs">
+            <div class="kv"><b>Endpoint</b><span id="apiBase">same host</span></div>
+            <div class="kv"><b>Last update</b><span id="lastUpdate">—</span></div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="muted">Ответ /api/status:</div>
+          <div class="out" id="outStatus">{}</div>
+        </div>
+
+        <!-- TOOLS -->
+        <div class="pane" id="tab-tools">
+          <div class="muted">
+            Эти кнопки вызовут API. Если какого-то эндпоинта ещё нет в <span class="badge">bot.js</span>,
+            UI покажет “not implemented”.
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row">
+            <button class="btn" data-call="POST:/api/save">Сохранить данные</button>
+            <button class="btn" data-call="POST:/api/reload">Перезагрузить данные</button>
+            <button class="btn" data-call="POST:/api/reset-stats">Сбросить статистику</button>
+            <button class="btn danger" data-call="POST:/api/panic">PANIC (stop)</button>
+          </div>
+
+          <div class="hint">
+            Под эти кнопки нужно добавить соответствующие routes в Express. Пока они безопасно “проверяются”.
+          </div>
+
+          <div class="hr"></div>
+          <div class="muted">Ответ последнего вызова:</div>
+          <div class="out" id="outTools">{}</div>
+        </div>
+
+        <!-- TEST CHAT -->
+        <div class="pane" id="tab-chat">
+          <div class="muted">
+            Это веб-симулятор, чтобы быстро тестировать текстовые ответы модели (если сделаем /api/chat).
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row">
+            <div class="field" style="flex:2; min-width:240px;">
+              <label>Сообщение</label>
+              <input id="chatMsg" placeholder="Например: Привет, как день?" />
+            </div>
+            <div class="field" style="max-width:220px;">
+              <label>Контекст / метка</label>
+              <input id="chatTag" placeholder="например: test" />
+            </div>
+            <div class="field" style="max-width:220px;">
+              <label>Режим</label>
+              <select id="chatMode">
+                <option value="soft">мягко</option>
+                <option value="neutral">нейтрально</option>
+                <option value="direct">прямо</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn primary" id="btnChatSend">Отправить (если есть /api/chat)</button>
+            <button class="btn" id="btnChatClear">Очистить</button>
+          </div>
+
+          <div class="hint">
+            Чтобы это заработало, нужен endpoint <span class="badge">POST /api/chat</span>.
+            Если его нет — будет подсказка.
+          </div>
+
+          <div class="hr"></div>
+          <div class="muted">Лог:</div>
+          <div class="out" id="outChat"></div>
+        </div>
+
+        <!-- DEBUG -->
+        <div class="pane" id="tab-debug">
+          <div class="row" style="justify-content:space-between;">
+            <div class="muted">
+              Быстрая диагностика: заголовки, ошибки, ответы.
+            </div>
+            <div class="row">
+              <button class="btn" id="btnCopyStatus">Скопировать /api/status</button>
+              <button class="btn" id="btnClearDebug">Очистить</button>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+          <div class="muted">Debug log:</div>
+          <div class="out" id="outDebug"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  // Same host by default
+  const apiBase = "";
+
+  // ---------- helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const nowStr = () => new Date().toLocaleString();
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+  }
+  function setApiIndicator(ok){
+    const dot = $("apiDot");
+    const text = $("apiText");
+    const badge = $("badgeApi");
+    if(ok){
+      dot.className = "dot good";
+      text.textContent = "API: online";
+      badge.className = "badge good";
+      badge.textContent = "API: OK";
+    }else{
+      dot.className = "dot bad";
+      text.textContent = "API: offline";
+      badge.className = "badge bad";
+      badge.textContent = "API: FAIL";
+    }
+  }
+  function setLearnBadge(enabled){
+    const b = $("badgeLearn");
+    if(enabled){
+      b.className = "badge good";
+      b.textContent = "LEARN: ON";
+    }else{
+      b.className = "badge warn";
+      b.textContent = "LEARN: OFF";
+    }
+  }
+  function getToken(){
+    return $("token").value.trim();
+  }
+  function saveToken(){
+    localStorage.setItem("DMCP_WEB_TOKEN", getToken());
+  }
+  function loadToken(){
+    const t = localStorage.getItem("DMCP_WEB_TOKEN") || "";
+    $("token").value = t;
+  }
+
+  async function apiFetch(path, opts = {}){
+    const token = getToken();
+    const headers = Object.assign({}, opts.headers || {});
+    if(token) headers["x-web-token"] = token;
+
+    const finalOpts = Object.assign({}, opts, { headers });
+
+    try{
+      const res = await fetch(`${apiBase}${path}`, finalOpts);
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { raw: text }; }
+      return { ok: res.ok, status: res.status, data };
+    }catch(err){
+      return { ok: false, status: 0, data: { error: String(err) } };
+    }
+  }
+
+  function logDebug(obj){
+    const out = $("outDebug");
+    const line = `[${nowStr()}] ${typeof obj === "string" ? obj : JSON.stringify(obj, null, 2)}\n\n`;
+    out.textContent = line + out.textContent;
+  }
+
+  // ---------- tabs ----------
+  document.querySelectorAll(".tab").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+      document.querySelectorAll(".pane").forEach(p=>p.classList.remove("active"));
+      btn.classList.add("active");
+      $(btn.dataset.tab).classList.add("active");
+    });
+  });
+
+  // ---------- actions ----------
+  async function refreshStatus(){
+    saveToken();
+    const r = await apiFetch("/api/status");
+    setApiIndicator(r.ok);
+
+    $("lastUpdate").textContent = nowStr();
+
+    if(!r.ok){
+      $("botStatus").textContent = "offline";
+      $("learnStatus").textContent = "—";
+      $("serverTime").textContent = "—";
+      $("outStatus").textContent = JSON.stringify(r.data, null, 2);
+      logDebug({ where:"/api/status", ...r });
+      toast("API offline или неверный токен");
+      return;
+    }
+
+    // expected: { ok, bot, learn, ... }
+    $("outStatus").textContent = JSON.stringify(r.data, null, 2);
+    $("botStatus").textContent = r.data.bot || "online";
+    $("learnStatus").textContent = String(r.data.learn);
+    $("serverTime").textContent = r.data.time || nowStr();
+
+    setLearnBadge(!!r.data.learn);
+    const badgeLearn = $("badgeLearn");
+    $("badgeApi").textContent = "API: OK";
+
+    toast("Статус обновлён");
+  }
+
+  async function setLearning(value){
+    saveToken();
+    const r = await apiFetch("/api/learn", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ value })
+    });
+    if(!r.ok){
+      logDebug({ where:"/api/learn", ...r });
+      toast("Не удалось переключить learning");
+    }else{
+      toast(value ? "Learning включён" : "Learning выключен");
+      await refreshStatus();
+    }
+  }
+
+  // tools calls (safe)
+  async function callTool(signature){
+    saveToken();
+    const [method, path] = signature.split(":");
+    const r = await apiFetch(path, {
+      method,
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({})
+    });
+
+    $("outTools").textContent = JSON.stringify(r.data, null, 2);
+
+    if(!r.ok){
+      // common: 404 not found => endpoint not implemented
+      if(r.status === 404){
+        toast("Эндпоинт не реализован в bot.js");
+      }else if(r.status === 401 || r.status === 403){
+        toast("Неверный токен");
+      }else{
+        toast("Ошибка запроса");
+      }
+      logDebug({ where: signature, ...r });
+    }else{
+      toast("Готово");
+    }
+  }
+
+  // chat simulation (needs backend /api/chat)
+  async function sendChat(){
+    saveToken();
+    const msg = $("chatMsg").value.trim();
+    const tag = $("chatTag").value.trim();
+    const mode = $("chatMode").value;
+
+    if(!msg){ toast("Введите сообщение"); return; }
+
+    const r = await apiFetch("/api/chat", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ message: msg, tag, mode })
+    });
+
+    const out = $("outChat");
+    const prefix = `[${nowStr()}] YOU: ${msg}\n`;
+    out.textContent = prefix + out.textContent;
+
+    if(!r.ok){
+      const hint = (r.status === 404)
+        ? "BACKEND: /api/chat не реализован"
+        : "BACKEND error";
+      out.textContent = `[${nowStr()}] ${hint}\n${JSON.stringify(r.data, null, 2)}\n\n` + out.textContent;
+      toast("Чат API не готов");
+      logDebug({ where:"/api/chat", ...r });
+      return;
+    }
+
+    const answer = r.data.reply || r.data.text || JSON.stringify(r.data);
+    out.textContent = `[${nowStr()}] BOT: ${answer}\n\n` + out.textContent;
+    toast("Ответ получен");
+  }
+
+  // ---------- wire UI ----------
+  $("btnRefresh").addEventListener("click", refreshStatus);
+  $("btnLearnOn").addEventListener("click", ()=>setLearning(true));
+  $("btnLearnOff").addEventListener("click", ()=>setLearning(false));
+
+  document.querySelectorAll("[data-call]").forEach(btn=>{
+    btn.addEventListener("click", ()=>callTool(btn.dataset.call));
+  });
+
+  $("btnChatSend").addEventListener("click", sendChat);
+  $("btnChatClear").addEventListener("click", ()=> $("outChat").textContent = "");
+
+  $("btnCopyStatus").addEventListener("click", async ()=>{
+    const txt = $("outStatus").textContent || "{}";
+    await navigator.clipboard.writeText(txt);
+    toast("Скопировано");
+  });
+  $("btnClearDebug").addEventListener("click", ()=> $("outDebug").textContent = "");
+
+  $("token").addEventListener("input", ()=>saveToken());
+
+  $("toggleToken").addEventListener("click", ()=>{
+    const inp = $("token");
+    inp.type = (inp.type === "password") ? "text" : "password";
+    $("toggleToken").textContent = (inp.type === "password") ? "показать" : "скрыть";
+  });
+
+  // ---------- init ----------
+  loadToken();
+  $("outChat").textContent = "";
+  refreshStatus();
+
+  // auto refresh every 5s
+  setInterval(refreshStatus, 5000);
+</script>
+</body>
+</html>

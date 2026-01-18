@@ -1,8 +1,244 @@
 import 'dotenv/config';
 import fs from 'fs';
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import express from 'express';
 import { Telegraf, Markup } from 'telegraf';
 import OpenAI from 'openai';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// =======================
+// WEB INTERFACE (Express)
+// =======================
+// =======================
+// WEB INTERFACE (Express)
+// =======================
+
+const app = express();
+const WEB_PORT = Number(process.env.WEB_PORT || 3000);
+const WEB_TOKEN = String(process.env.WEB_TOKEN || '');
+
+app.use(express.json({ limit: '1mb' }));
+
+// Статика: /admin.html лежит в /root/dm-copilot-bot/web
+const webDir = path.join(__dirname, 'web');
+app.use(express.static(webDir));
+
+// --- Auth middleware ---
+function requireWebToken(req, res, next) {
+  if (!WEB_TOKEN) return res.status(500).json({ ok: false, error: 'WEB_TOKEN not set in .env' });
+  const t = req.headers['x-web-token'];
+  if (!t || t !== WEB_TOKEN) return res.status(401).json({ ok: false, error: 'bad token' });
+  next();
+}
+
+// ---------- DATA (data.json) ----------
+const dataPath = path.join(__dirname, 'data.json');
+let DATA = { users: {}, stats: {} };
+
+function loadData() {
+  try {
+    if (fs.existsSync(dataPath)) {
+      DATA = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+    }
+  } catch (e) {
+    console.error('loadData error:', e);
+  }
+  // safety defaults
+  DATA.users ??= {};
+  DATA.stats ??= {};
+}
+
+function saveData() {
+  fs.writeFileSync(dataPath, JSON.stringify(DATA, null, 2), 'utf8');
+}
+
+loadData();
+
+// ---------- BOT FLAGS ----------
+let learningEnabled = false; // у тебя это уже есть — оставь один раз!
+
+// ---------- HEALTH ----------
+app.get('/health', (req, res) => res.json({ ok: true, status: 'ok' }));
+
+// ---------- STATUS ----------
+app.get('/api/status', requireWebToken, (req, res) => {
+  res.json({
+    ok: true,
+    bot: 'online',
+    learn: learningEnabled,
+    time: new Date().toISOString(),
+    usersCount: Object.keys(DATA.users || {}).length,
+  });
+});
+
+// ---------- LEARNING ----------
+app.post('/api/learn', requireWebToken, (req, res) => {
+  const { value } = req.body || {};
+  learningEnabled = !!value;
+  res.json({ ok: true, learn: learningEnabled });
+});
+
+// ---------- USERS LIST ----------
+app.get('/api/users', requireWebToken, (req, res) => {
+  const users = Object.entries(DATA.users || {}).map(([id, u]) => ({
+    id,
+    username: u.username || null,
+    first_name: u.first_name || null,
+    lastSeen: u.lastSeen || null,
+    messages: u.messages || 0,
+  }));
+  users.sort((a, b) => (b.messages || 0) - (a.messages || 0));
+  res.json({ ok: true, users });
+});
+
+// ---------- DATA GET/SET ----------
+app.get('/api/data', requireWebToken, (req, res) => {
+  res.json({ ok: true, data: DATA });
+});
+
+app.post('/api/data', requireWebToken, (req, res) => {
+  const { data } = req.body || {};
+  if (!data || typeof data !== 'object') return res.status(400).json({ ok: false, error: 'bad data' });
+  DATA = data;
+  DATA.users ??= {};
+  DATA.stats ??= {};
+  saveData();
+  res.json({ ok: true });
+});
+
+// ---------- SAVE / RELOAD ----------
+app.post('/api/save', requireWebToken, (req, res) => {
+  saveData();
+  res.json({ ok: true });
+});
+
+app.post('/api/reload', requireWebToken, (req, res) => {
+  loadData();
+  res.json({ ok: true });
+});
+
+// ---------- RESET STATS ----------
+app.post('/api/reset-stats', requireWebToken, (req, res) => {
+  DATA.stats = {};
+  saveData();
+  res.json({ ok: true });
+});
+
+// ---------- LOGS ----------
+function safeTail(filePath, lines = 200) {
+  try {
+    if (!fs.existsSync(filePath)) return `no file: ${filePath}`;
+    const content = fs.readFileSync(filePath, 'utf8');
+    const arr = content.split('\n');
+    return arr.slice(-lines).join('\n');
+  } catch (e) {
+    return String(e);
+  }
+}
+
+app.get('/api/logs', requireWebToken, (req, res) => {
+  const lines = Math.min(1000, Math.max(50, Number(req.query.lines || 200)));
+  const outLog = '/root/.pm2/logs/dm-copilot-out.log';
+  const errLog = '/root/.pm2/logs/dm-copilot-error.log';
+  res.json({
+    ok: true,
+    out: safeTail(outLog, lines),
+    err: safeTail(errLog, lines),
+  });
+});
+
+// ---------- CHAT (web test) ----------
+// Здесь два варианта:
+// 1) если у тебя уже есть функция генерации ответа для Telegram — просто переиспользуем её
+// 2) если нет — делаем минимальный вызов OpenAI
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+async function generateReplyMinimal(text) {
+  const r = await openai.chat.completions.create({
+    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: 'Ты помощник для DM Copilot. Отвечай кратко и по делу.' },
+      { role: 'user', content: text }
+    ],
+    temperature: 0.6,
+  });
+  return r.choices?.[0]?.message?.content?.trim() || '';
+}
+
+app.post('/api/chat', requireWebToken, async (req, res) => {
+  try {
+    const { message, tag, mode } = req.body || {};
+    if (!message || typeof message !== 'string') return res.status(400).json({ ok: false, error: 'message required' });
+
+    const reply = await generateReplyMinimal(message);
+
+    res.json({ ok: true, reply, tag: tag || null, mode: mode || null });
+  } catch (e) {
+    console.error('/api/chat error:', e);
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+// ---------- PANIC (stop process) ----------
+app.post('/api/panic', requireWebToken, (req, res) => {
+  res.json({ ok: true, stopping: true });
+  setTimeout(() => process.exit(1), 250);
+});
+
+// старт web
+app.listen(WEB_PORT, () => {
+  console.log(`WEB: http://0.0.0.0:${WEB_PORT}/admin.html`);
+});
+
+// health-check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', bot: 'online' });
+});
+// JSON body
+app.use(express.json());
+
+// Admin status
+app.get('/api/status', requireWebToken, (req, res) => {
+  res.json({
+    ok: true,
+    bot: 'online',
+    learn: learningEnabled,
+  });
+});
+
+// Toggle learning
+app.post('/api/learn', requireWebToken, (req, res) => {
+  const { value } = req.body || {};
+  learningEnabled = !!value;
+  console.log('🧠 Learning set to:', learningEnabled);
+  res.json({ ok: true, learn: learningEnabled });
+});
+
+
+// ------------------------------
+// Learning state (shared)
+// ------------------------------
+let learningEnabled = false;
+
+// ------------------------------
+// Web API: toggle learning
+// ------------------------------
+app.post('/api/learn', requireWebToken, (req, res) => {
+  const { value } = req.body || {};
+  learningEnabled = !!value;
+  console.log('🌱 Learning set to:', learningEnabled);
+  res.json({ ok: true, learn: learningEnabled });
+});
+
+app.listen(WEB_PORT, () => {
+  console.log(`🌐 Web interface running on port ${WEB_PORT}`);
+});
+
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
   console.error('Missing TELEGRAM_BOT_TOKEN in .env');
@@ -17,7 +253,32 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID ? String(process.env.ADMIN_TELEGRAM_ID) : null;
+// ------------------------------
+// Web API auth (simple token)
+// ------------------------------
+const WEB_TOKEN = process.env.WEB_TOKEN || null; // придумай и добавь в .env
+function requireWebToken(req, res, next) {
+  const token = req.headers['x-web-token'];
 
+  if (!WEB_TOKEN) {
+    return res.status(500).json({ error: 'WEB_TOKEN not configured' });
+  }
+
+  if (!token) {
+    return res.status(401).json({ error: 'Missing token' });
+  }
+
+  if (token !== WEB_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  next(); // 🔥 КРИТИЧНО
+}
+
+
+// ------------------------------
+// Learning toggle state
+// ------------------------------
 // --------------------
 // Access control (optional)
 // --------------------
