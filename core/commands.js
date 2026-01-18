@@ -6,6 +6,7 @@ import {
   bumpLearningModeOutcome,
   bumpLearningModeTry,
   bumpModeStats,
+  clamp,
   cleanText,
   closeThread,
   ensureLearningModeStats,

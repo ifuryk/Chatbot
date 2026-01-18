@@ -14,7 +14,15 @@ import {
   stageLabel,
 } from './core/state.js';
 import {
+  addGirlNote,
   getActiveGirl,
+  getContext,
+  listGirlNotes,
+  listGirls,
+  resetContext,
+  resetGirl,
+  setActiveGirl,
+  setContext,
 } from './core/girls.js';
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
@@ -371,28 +379,32 @@ app.use('/api', (req, res, next) => {
   return next();
 });
 
+function getUserId(req) {
+  return req.headers['x-user-id'] || 'web';
+}
+
 app.get('/api/status', (req, res) => {
-  res.json(commands.getStatus(req.headers['x-user-id'] || 'web'));
+  res.json(commands.getStatus(getUserId(req)));
 });
 
 app.post('/api/learn', (req, res) => {
-  const enabled = commands.setLearning(req.headers['x-user-id'] || 'web', Boolean(req.body?.enabled));
+  const enabled = commands.setLearning(getUserId(req), Boolean(req.body?.enabled));
   res.json({ enabled });
 });
 
 app.post('/api/learn_debug', (req, res) => {
-  const enabled = commands.setLearnDebug(req.headers['x-user-id'] || 'web', Boolean(req.body?.enabled));
+  const enabled = commands.setLearnDebug(getUserId(req), Boolean(req.body?.enabled));
   res.json({ enabled });
 });
 
 app.post('/api/autopick', (req, res) => {
-  const enabled = commands.setAutopick(req.headers['x-user-id'] || 'web', Boolean(req.body?.enabled));
+  const enabled = commands.setAutopick(getUserId(req), Boolean(req.body?.enabled));
   res.json({ enabled });
 });
 
 app.post('/api/pacing', (req, res) => {
   try {
-    const pacing = commands.setPacing(req.headers['x-user-id'] || 'web', req.body?.pacing);
+    const pacing = commands.setPacing(getUserId(req), req.body?.pacing);
     res.json({ pacing });
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Invalid pacing' });
@@ -401,7 +413,7 @@ app.post('/api/pacing', (req, res) => {
 
 app.post('/api/autoghost', (req, res) => {
   try {
-    const hours = commands.setAutoghost(req.headers['x-user-id'] || 'web', req.body?.hours);
+    const hours = commands.setAutoghost(getUserId(req), req.body?.hours);
     res.json({ hours });
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Invalid hours' });
@@ -410,7 +422,7 @@ app.post('/api/autoghost', (req, res) => {
 
 app.post('/api/tune', (req, res) => {
   try {
-    const value = commands.tuneWeight(req.headers['x-user-id'] || 'web', req.body?.key, req.body?.value);
+    const value = commands.tuneWeight(getUserId(req), req.body?.key, req.body?.value);
     res.json({ key: req.body?.key, value });
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Invalid tune' });
@@ -418,33 +430,33 @@ app.post('/api/tune', (req, res) => {
 });
 
 app.post('/api/reset', (req, res) => {
-  const { key } = resetGirl(req.headers['x-user-id'] || 'web');
+  const { key } = resetGirl(getUserId(req));
   res.json({ activeGirl: key });
 });
 
 app.post('/api/reset_learn', (req, res) => {
-  const weights = commands.resetLearning(req.headers['x-user-id'] || 'web');
+  const weights = commands.resetLearning(getUserId(req));
   res.json({ weights });
 });
 
 app.get('/api/girls', (req, res) => {
-  const userId = req.headers['x-user-id'] || 'web';
+  const userId = getUserId(req);
   res.json({ active: getActiveGirl(userId).key, girls: listGirls(userId) });
 });
 
 app.post('/api/girls/active', (req, res) => {
-  const { key, girl } = setActiveGirl(req.headers['x-user-id'] || 'web', req.body?.name || '');
+  const { key, girl } = setActiveGirl(getUserId(req), req.body?.name || '');
   res.json({ active: key, stage: girl.stage, context: girl.ctx });
 });
 
 app.get('/api/context', (req, res) => {
-  const ctxText = getContext(req.headers['x-user-id'] || 'web');
+  const ctxText = getContext(getUserId(req));
   res.json({ context: ctxText });
 });
 
 app.post('/api/context', (req, res) => {
   try {
-    const ctxText = setContext(req.headers['x-user-id'] || 'web', req.body?.text || '');
+    const ctxText = setContext(getUserId(req), req.body?.text || '');
     res.json({ context: ctxText });
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Failed to set context' });
@@ -452,13 +464,13 @@ app.post('/api/context', (req, res) => {
 });
 
 app.post('/api/context/reset', (req, res) => {
-  const ctxText = resetContext(req.headers['x-user-id'] || 'web');
+  const ctxText = resetContext(getUserId(req));
   res.json({ context: ctxText });
 });
 
 app.post('/api/message/send', (req, res) => {
   try {
-    const result = commands.commitReply(req.headers['x-user-id'] || 'web', { text: req.body?.text });
+    const result = commands.commitReply(getUserId(req), { text: req.body?.text });
     res.json({ chosen: result.chosen, thread: result.thread });
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Failed to send' });
@@ -467,16 +479,46 @@ app.post('/api/message/send', (req, res) => {
 
 app.post('/api/message/analyzeLast', async (req, res) => {
   try {
-    const out = await commands.analyzeLastMessage(req.headers['x-user-id'] || 'web');
+    const out = await commands.analyzeLastMessage(getUserId(req));
     res.json({ analysis: out });
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Failed to analyze' });
   }
 });
 
+app.post('/api/message/generate', async (req, res) => {
+  try {
+    const result = await commands.generateReplies(getUserId(req), req.body?.text || '');
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e?.message || 'Failed to generate' });
+  }
+});
+
+app.post('/api/message/tweak', async (req, res) => {
+  try {
+    const result = await commands.tweakReplies(getUserId(req), req.body?.type);
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e?.message || 'Failed to tweak' });
+  }
+});
+
+app.post('/api/message/commit', (req, res) => {
+  try {
+    const result = commands.commitReply(getUserId(req), {
+      which: req.body?.which,
+      text: req.body?.text,
+    });
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e?.message || 'Failed to commit' });
+  }
+});
+
 app.post('/api/message/generateReplies', async (req, res) => {
   try {
-    const result = await commands.generateReplies(req.headers['x-user-id'] || 'web', req.body?.text || '');
+    const result = await commands.generateReplies(getUserId(req), req.body?.text || '');
     res.json(result);
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Failed to generate' });
@@ -485,7 +527,7 @@ app.post('/api/message/generateReplies', async (req, res) => {
 
 app.post('/api/message/commitReply', (req, res) => {
   try {
-    const result = commands.commitReply(req.headers['x-user-id'] || 'web', {
+    const result = commands.commitReply(getUserId(req), {
       which: req.body?.which,
       text: req.body?.text,
       suggestions: req.body?.suggestions,
@@ -497,27 +539,27 @@ app.post('/api/message/commitReply', (req, res) => {
 });
 
 app.get('/api/stats', (req, res) => {
-  res.json(commands.getStats(req.headers['x-user-id'] || 'web'));
+  res.json(commands.getStats(getUserId(req)));
 });
 
 app.get('/api/gstats', (req, res) => {
-  res.json(commands.getGstats(req.headers['x-user-id'] || 'web'));
+  res.json(commands.getGstats(getUserId(req)));
 });
 
 app.get('/api/score', (req, res) => {
-  res.json({ score: commands.getScore(req.headers['x-user-id'] || 'web') });
+  res.json({ score: commands.getScore(getUserId(req)) });
 });
 
 app.get('/api/gscore', (req, res) => {
-  res.json(commands.getGscore(req.headers['x-user-id'] || 'web'));
+  res.json(commands.getGscore(getUserId(req)));
 });
 
 app.get('/api/modes', (req, res) => {
-  res.json(commands.getModes(req.headers['x-user-id'] || 'web'));
+  res.json(commands.getModes(getUserId(req)));
 });
 
 app.get('/api/gmodes', (req, res) => {
-  res.json(commands.getGModes(req.headers['x-user-id'] || 'web'));
+  res.json(commands.getGModes(getUserId(req)));
 });
 
 app.get('/api/export', (req, res) => {
@@ -540,7 +582,7 @@ app.get('/api/backup/:name', (req, res) => {
 
 app.post('/api/message/outcome', (req, res) => {
   try {
-    const result = commands.recordOutcome(req.headers['x-user-id'] || 'web', req.body?.outcome);
+    const result = commands.recordOutcome(getUserId(req), req.body?.outcome);
     res.json(result);
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Failed to record outcome' });
@@ -549,11 +591,28 @@ app.post('/api/message/outcome', (req, res) => {
 
 app.post('/api/command', async (req, res) => {
   try {
-    const result = await commands.executeCommand(req.headers['x-user-id'] || 'web', req.body?.command || '');
+    const result = await commands.executeCommand(getUserId(req), req.body?.command || '');
     res.json(result);
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Command failed' });
   }
+});
+
+app.get('/api/notes', (req, res) => {
+  res.json(listGirlNotes(getUserId(req)));
+});
+
+app.post('/api/notes', (req, res) => {
+  try {
+    const result = addGirlNote(getUserId(req), req.body?.text || '');
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e?.message || 'Failed to add note' });
+  }
+});
+
+app.get('/api/profile', (req, res) => {
+  res.json(commands.getProfile(getUserId(req)));
 });
 
 app.listen(WEB_PORT, () => {

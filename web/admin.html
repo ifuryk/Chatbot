@@ -17,6 +17,8 @@
         align-items: center;
         padding: 16px 24px;
         border-bottom: 1px solid #222;
+        gap: 16px;
+        flex-wrap: wrap;
       }
       main {
         padding: 24px;
@@ -26,7 +28,7 @@
       .grid {
         display: grid;
         gap: 16px;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       }
       .card {
         background: #171a23;
@@ -64,6 +66,9 @@
         border-radius: 6px;
         cursor: pointer;
       }
+      button.secondary {
+        background: #2a2f3a;
+      }
       button[disabled] {
         opacity: 0.6;
         cursor: not-allowed;
@@ -93,8 +98,12 @@
         border: 1px solid #333;
         padding: 12px;
         border-radius: 6px;
-        max-height: 240px;
+        max-height: 260px;
         overflow: auto;
+      }
+      .small {
+        font-size: 12px;
+        opacity: 0.7;
       }
     </style>
   </head>
@@ -104,50 +113,151 @@
         <strong>DM Bot Admin</strong>
         <span class="status-pill"><span id="botDot" class="dot"></span>Bot <span id="botStatus">OFF</span></span>
         <span class="status-pill">Learning <span id="learningStatus">OFF</span></span>
+        <span class="small" id="buildTs"></span>
       </div>
-      <div>
-        <label>WEB_TOKEN</label>
-        <input id="tokenInput" placeholder="x-web-token" />
+      <div class="row">
+        <div>
+          <label>WEB_TOKEN</label>
+          <input id="tokenInput" placeholder="x-web-token" />
+        </div>
+        <div>
+          <label>x-user-id</label>
+          <input id="userIdInput" placeholder="web" />
+        </div>
       </div>
     </header>
 
     <main>
       <div class="card">
         <h2>Status</h2>
-        <button id="refreshStatus">Обновить статус</button>
+        <div class="row">
+          <button id="refreshStatus">Обновить статус</button>
+          <label class="row" style="align-items:center;gap:6px;">
+            <input type="checkbox" id="autoRefresh" checked />
+            Auto refresh (5s)
+          </label>
+        </div>
         <pre id="statusBox">—</pre>
       </div>
 
-      <div class="card">
-        <h2>Learning toggle</h2>
-        <div class="row">
-          <button id="learnOn">Learn ON</button>
-          <button id="learnOff">Learn OFF</button>
-          <button id="learnDebugOn">Debug ON</button>
-          <button id="learnDebugOff">Debug OFF</button>
-          <button id="resetLearn">Reset Learn</button>
+      <div class="grid">
+        <div class="card">
+          <h2>Learning</h2>
+          <div class="row">
+            <button id="learnOn">Learn ON</button>
+            <button id="learnOff" class="secondary">Learn OFF</button>
+            <button id="learnDebugOn">Debug ON</button>
+            <button id="learnDebugOff" class="secondary">Debug OFF</button>
+            <button id="resetLearn" class="secondary">Reset Learn</button>
+          </div>
+          <button id="showProfile">Показать профиль</button>
+          <pre id="profileBox">—</pre>
+        </div>
+
+        <div class="card">
+          <h2>Настройки</h2>
+          <div class="row">
+            <button id="autopickOn">Autopick ON</button>
+            <button id="autopickOff" class="secondary">Autopick OFF</button>
+          </div>
+          <div class="row">
+            <button id="pacingWarm">Pacing warm</button>
+            <button id="pacingFast" class="secondary">Pacing fast</button>
+          </div>
+          <div class="row">
+            <input id="autoghostHours" placeholder="autoghost hours or 0" />
+            <button id="setAutoghost">Apply</button>
+            <button id="autoghostOff" class="secondary">Off</button>
+          </div>
+          <div class="card" style="margin-top:12px;">
+            <h3>Weights (0..1)</h3>
+            <div>
+              <label>warmth</label>
+              <input type="range" min="0" max="1" step="0.01" id="wWarmth" />
+              <span id="wWarmthVal" class="small"></span>
+            </div>
+            <div>
+              <label>brevity</label>
+              <input type="range" min="0" max="1" step="0.01" id="wBrevity" />
+              <span id="wBrevityVal" class="small"></span>
+            </div>
+            <div>
+              <label>humor</label>
+              <input type="range" min="0" max="1" step="0.01" id="wHumor" />
+              <span id="wHumorVal" class="small"></span>
+            </div>
+            <div>
+              <label>curiosity</label>
+              <input type="range" min="0" max="1" step="0.01" id="wCuriosity" />
+              <span id="wCuriosityVal" class="small"></span>
+            </div>
+            <div>
+              <label>flirt</label>
+              <input type="range" min="0" max="1" step="0.01" id="wFlirt" />
+              <span id="wFlirtVal" class="small"></span>
+            </div>
+            <div>
+              <label>inviteRate</label>
+              <input type="range" min="0" max="1" step="0.01" id="wInvite" />
+              <span id="wInviteVal" class="small"></span>
+            </div>
+            <button id="applyWeights">Apply weights</button>
+          </div>
         </div>
       </div>
 
       <div class="grid">
         <div class="card">
-          <h2>Girls</h2>
+          <h2>Диалог</h2>
+          <label>Её сообщение</label>
+          <textarea id="herMessage"></textarea>
+          <button id="generateReplies">Generate replies</button>
+          <pre id="suggestionsBox">—</pre>
+          <div class="row">
+            <button id="tweakShort">Короче</button>
+            <button id="tweakFunny">Смешнее</button>
+            <button id="tweakBolder">Смелее</button>
+            <button id="tweakInvite">Пригласи</button>
+            <button id="tweakWhy" class="secondary">Почему</button>
+          </div>
+          <h3>Я отправил</h3>
+          <div class="row">
+            <button id="commitBest">Best</button>
+            <button id="commitAlt1">Alt1</button>
+            <button id="commitAlt2">Alt2</button>
+            <button id="commitAlt3">Alt3</button>
+          </div>
+          <label>Отправил вручную</label>
+          <textarea id="manualReply"></textarea>
+          <button id="commitManual">Commit manual</button>
+          <h3>Исход</h3>
+          <div class="row">
+            <button id="outReplied">Она ответила</button>
+            <button id="outStrong">Ответила с интересом</button>
+            <button id="outDatePlanned">Дошли до встречи</button>
+            <button id="outDate">Встреча</button>
+            <button id="outGhost" class="secondary">Пропала</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Девушки / контекст / заметки</h2>
+          <label>Список девушек</label>
           <select id="girlsList"></select>
           <div class="row">
-            <button id="applyGirl">Выбрать активную</button>
-            <button id="refreshGirls">/girls</button>
+            <button id="refreshGirls">Обновить список</button>
+            <button id="applyGirl">Сделать активной</button>
           </div>
-        </div>
-        <div class="card">
-          <h2>Context</h2>
+          <label>Новая/активная девушка</label>
+          <input id="newGirlName" placeholder="Имя" />
+          <button id="createGirl">Создать/выбрать</button>
+          <label>Контекст</label>
           <textarea id="contextText"></textarea>
           <div class="row">
-            <button id="applyContext">Применить контекст</button>
-            <button id="resetDialog">/reset</button>
+            <button id="applyContext">Сохранить контекст</button>
+            <button id="resetDialog" class="secondary">/reset</button>
           </div>
-        </div>
-        <div class="card">
-          <h2>Notes</h2>
+          <label>Заметки (последние)</label>
           <pre id="notesBox">—</pre>
           <textarea id="noteInput" placeholder="Новая заметка"></textarea>
           <button id="addNote">Добавить заметку</button>
@@ -155,21 +265,6 @@
       </div>
 
       <div class="grid">
-        <div class="card">
-          <h2>Automation</h2>
-          <div class="row">
-            <button id="autopickOn">Autopick ON</button>
-            <button id="autopickOff">Autopick OFF</button>
-          </div>
-          <div class="row">
-            <input id="autoghostHours" placeholder="autoghost hours or off" />
-            <button id="setAutoghost">Apply</button>
-          </div>
-          <div class="row">
-            <button id="pacingWarm">Pacing warm</button>
-            <button id="pacingFast">Pacing fast</button>
-          </div>
-        </div>
         <div class="card">
           <h2>Analytics / Plans</h2>
           <div class="row">
@@ -179,65 +274,73 @@
           </div>
         </div>
         <div class="card">
-          <h2>Stats</h2>
+          <h2>Messaging</h2>
+          <label>/sent</label>
+          <textarea id="sentText"></textarea>
+          <button id="btnSent">Send</button>
+          <label>/reengage (hours)</label>
+          <input id="reengageHours" placeholder="24" />
+          <button id="btnReengage">Run</button>
+        </div>
+        <div class="card">
+          <h2>Stats / Modes</h2>
           <div class="row">
             <button id="btnStats">/stats</button>
             <button id="btnGstats">/gstats</button>
-            <button id="btnScore">/score</button>
-            <button id="btnGscore">/gscore</button>
-          </div>
-        </div>
-        <div class="card">
-          <h2>Modes</h2>
-          <div class="row">
             <button id="btnModes">/modes</button>
             <button id="btnGmodes">/gmodes</button>
           </div>
+          <pre id="statsBox">—</pre>
         </div>
       </div>
 
       <div class="grid">
         <div class="card">
-          <h2>Messaging</h2>
-          <textarea id="sentText" placeholder="/sent текст"></textarea>
-          <button id="btnSent">/sent</button>
-          <input id="reengageHours" placeholder="reengage hours (optional)" />
-          <button id="btnReengage">/reengage</button>
-        </div>
-        <div class="card">
           <h2>Export / Backup</h2>
           <div class="row">
-            <button id="btnExport">/export</button>
-            <button id="btnBackup">/backup</button>
+            <button id="btnExport">Export</button>
+            <button id="btnDownloadExport" class="secondary">Download export</button>
           </div>
-          <input id="backupName" placeholder="backup filename" />
-          <button id="btnDownloadBackup">Download backup</button>
+          <div class="row">
+            <button id="btnBackup">Create backup</button>
+            <input id="backupName" placeholder="backup filename" />
+            <button id="btnDownloadBackup" class="secondary">Download backup</button>
+          </div>
+          <pre id="exportBox">—</pre>
         </div>
         <div class="card">
           <h2>Command Runner</h2>
           <input id="commandInput" placeholder="/girl Masha" />
           <button id="runCommand">Run</button>
         </div>
-      </div>
-
-      <div class="card">
-        <h2>Output Log</h2>
-        <pre id="logBox">—</pre>
+        <div class="card">
+          <h2>Output / Log</h2>
+          <pre id="logBox">—</pre>
+        </div>
       </div>
     </main>
 
     <script>
+      const BUILD_TS = new Date().toISOString();
+      document.getElementById('buildTs').textContent = `Build: ${BUILD_TS}`;
+
       const tokenInput = document.getElementById('tokenInput');
+      const userIdInput = document.getElementById('userIdInput');
       tokenInput.value = localStorage.getItem('webToken') || '';
-      tokenInput.addEventListener('input', () => {
-        localStorage.setItem('webToken', tokenInput.value.trim());
-      });
+      userIdInput.value = localStorage.getItem('webUserId') || 'web';
+
+      tokenInput.addEventListener('input', () => localStorage.setItem('webToken', tokenInput.value.trim()));
+      userIdInput.addEventListener('input', () => localStorage.setItem('webUserId', userIdInput.value.trim() || 'web'));
 
       const logBox = document.getElementById('logBox');
       const statusBox = document.getElementById('statusBox');
       const botStatus = document.getElementById('botStatus');
       const botDot = document.getElementById('botDot');
       const learningStatus = document.getElementById('learningStatus');
+      const statsBox = document.getElementById('statsBox');
+      const suggestionsBox = document.getElementById('suggestionsBox');
+      const exportBox = document.getElementById('exportBox');
+      const profileBox = document.getElementById('profileBox');
 
       function setLog(payload) {
         logBox.textContent = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
@@ -245,9 +348,13 @@
 
       async function apiFetch(path, options = {}) {
         const token = localStorage.getItem('webToken') || '';
+        const userId = localStorage.getItem('webUserId') || 'web';
         const headers = options.headers || {};
         headers['x-web-token'] = token;
-        headers['Content-Type'] = 'application/json';
+        headers['x-user-id'] = userId;
+        if (options.body) {
+          headers['Content-Type'] = 'application/json';
+        }
         const res = await fetch(path, { ...options, headers });
         if (res.status === 401) {
           throw new Error('Неверный WEB_TOKEN');
@@ -273,6 +380,10 @@
         }
       }
 
+      function updateWeightLabel(id, value) {
+        document.getElementById(id).textContent = value.toFixed(2);
+      }
+
       async function refreshStatus() {
         try {
           const data = await apiFetch('/api/status');
@@ -280,6 +391,7 @@
           botStatus.textContent = 'ON';
           botDot.style.background = '#2bff88';
           learningStatus.textContent = data.learning.enabled ? 'ON' : 'OFF';
+          setWeightSliders(data.learning.weights);
           await refreshGirls();
           await refreshNotes();
           return data;
@@ -307,8 +419,26 @@
       }
 
       async function refreshNotes() {
-        const res = await apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/notes' }) });
-        document.getElementById('notesBox').textContent = JSON.stringify(res.data || res, null, 2);
+        const res = await apiFetch('/api/notes');
+        const notes = (res.notes || []).slice(-20);
+        document.getElementById('notesBox').textContent = JSON.stringify(notes, null, 2);
+      }
+
+      function setWeightSliders(weights) {
+        const map = {
+          wWarmth: 'warmth',
+          wBrevity: 'brevity',
+          wHumor: 'humor',
+          wCuriosity: 'curiosity',
+          wFlirt: 'flirt',
+          wInvite: 'inviteRate',
+        };
+        Object.entries(map).forEach(([id, key]) => {
+          const slider = document.getElementById(id);
+          const value = weights?.[key] ?? 0;
+          slider.value = value;
+          updateWeightLabel(`${id}Val`, Number(value));
+        });
       }
 
       document.getElementById('refreshStatus').addEventListener('click', () =>
@@ -316,104 +446,207 @@
       );
 
       document.getElementById('learnOn').addEventListener('click', () =>
-        withButton(document.getElementById('learnOn'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/learn on' }) }))
+        withButton(document.getElementById('learnOn'), () => apiFetch('/api/learn', { method: 'POST', body: JSON.stringify({ enabled: true }) }))
       );
       document.getElementById('learnOff').addEventListener('click', () =>
-        withButton(document.getElementById('learnOff'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/learn off' }) }))
+        withButton(document.getElementById('learnOff'), () => apiFetch('/api/learn', { method: 'POST', body: JSON.stringify({ enabled: false }) }))
       );
       document.getElementById('learnDebugOn').addEventListener('click', () =>
-        withButton(document.getElementById('learnDebugOn'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/learn_debug on' }) }))
+        withButton(document.getElementById('learnDebugOn'), () => apiFetch('/api/learn_debug', { method: 'POST', body: JSON.stringify({ enabled: true }) }))
       );
       document.getElementById('learnDebugOff').addEventListener('click', () =>
-        withButton(document.getElementById('learnDebugOff'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/learn_debug off' }) }))
+        withButton(document.getElementById('learnDebugOff'), () => apiFetch('/api/learn_debug', { method: 'POST', body: JSON.stringify({ enabled: false }) }))
       );
       document.getElementById('resetLearn').addEventListener('click', () =>
-        withButton(document.getElementById('resetLearn'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/reset_learn' }) }))
+        withButton(document.getElementById('resetLearn'), () => apiFetch('/api/reset_learn', { method: 'POST' }))
       );
 
-      document.getElementById('applyGirl').addEventListener('click', () =>
-        withButton(document.getElementById('applyGirl'), async () => {
-          const name = document.getElementById('girlsList').value;
-          const res = await apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: `/girl ${name}` }) });
-          await refreshGirls();
-          return res;
-        })
-      );
-      document.getElementById('refreshGirls').addEventListener('click', () =>
-        withButton(document.getElementById('refreshGirls'), () =>
-          apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/girls' }) })
-        )
-      );
-
-      document.getElementById('applyContext').addEventListener('click', () =>
-        withButton(document.getElementById('applyContext'), () => {
-          const text = document.getElementById('contextText').value;
-          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: `/ctx ${text}` }) });
-        })
-      );
-      document.getElementById('resetDialog').addEventListener('click', () =>
-        withButton(document.getElementById('resetDialog'), () =>
-          apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/reset' }) })
-        )
-      );
-
-      document.getElementById('addNote').addEventListener('click', () =>
-        withButton(document.getElementById('addNote'), async () => {
-          const note = document.getElementById('noteInput').value;
-          const res = await apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: `/note ${note}` }) });
-          await refreshNotes();
+      document.getElementById('showProfile').addEventListener('click', () =>
+        withButton(document.getElementById('showProfile'), async () => {
+          const res = await apiFetch('/api/profile');
+          profileBox.textContent = JSON.stringify(res, null, 2);
           return res;
         })
       );
 
       document.getElementById('autopickOn').addEventListener('click', () =>
-        withButton(document.getElementById('autopickOn'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/autopick on' }) }))
+        withButton(document.getElementById('autopickOn'), () => apiFetch('/api/autopick', { method: 'POST', body: JSON.stringify({ enabled: true }) }))
       );
       document.getElementById('autopickOff').addEventListener('click', () =>
-        withButton(document.getElementById('autopickOff'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/autopick off' }) }))
+        withButton(document.getElementById('autopickOff'), () => apiFetch('/api/autopick', { method: 'POST', body: JSON.stringify({ enabled: false }) }))
       );
-      document.getElementById('setAutoghost').addEventListener('click', () =>
-        withButton(document.getElementById('setAutoghost'), () => {
-          const hours = document.getElementById('autoghostHours').value.trim();
-          const cmd = hours ? `/autoghost ${hours}` : '/autoghost';
-          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: cmd }) });
-        })
-      );
+
       document.getElementById('pacingWarm').addEventListener('click', () =>
-        withButton(document.getElementById('pacingWarm'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/pacing warm' }) }))
+        withButton(document.getElementById('pacingWarm'), () => apiFetch('/api/pacing', { method: 'POST', body: JSON.stringify({ pacing: 'warm' }) }))
       );
       document.getElementById('pacingFast').addEventListener('click', () =>
-        withButton(document.getElementById('pacingFast'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/pacing fast' }) }))
+        withButton(document.getElementById('pacingFast'), () => apiFetch('/api/pacing', { method: 'POST', body: JSON.stringify({ pacing: 'fast' }) }))
+      );
+
+      document.getElementById('setAutoghost').addEventListener('click', () =>
+        withButton(document.getElementById('setAutoghost'), () => {
+          const hours = Number(document.getElementById('autoghostHours').value);
+          return apiFetch('/api/autoghost', { method: 'POST', body: JSON.stringify({ hours }) });
+        })
+      );
+      document.getElementById('autoghostOff').addEventListener('click', () =>
+        withButton(document.getElementById('autoghostOff'), () => apiFetch('/api/autoghost', { method: 'POST', body: JSON.stringify({ hours: 0 }) }))
+      );
+
+      document.getElementById('applyWeights').addEventListener('click', () =>
+        withButton(document.getElementById('applyWeights'), async () => {
+          const weights = {
+            warmth: Number(document.getElementById('wWarmth').value),
+            brevity: Number(document.getElementById('wBrevity').value),
+            humor: Number(document.getElementById('wHumor').value),
+            curiosity: Number(document.getElementById('wCuriosity').value),
+            flirt: Number(document.getElementById('wFlirt').value),
+            inviteRate: Number(document.getElementById('wInvite').value),
+          };
+          const results = {};
+          for (const [key, value] of Object.entries(weights)) {
+            const res = await apiFetch('/api/tune', { method: 'POST', body: JSON.stringify({ key, value }) });
+            results[key] = res.value;
+          }
+          return results;
+        })
+      );
+
+      ['wWarmth', 'wBrevity', 'wHumor', 'wCuriosity', 'wFlirt', 'wInvite'].forEach((id) => {
+        const slider = document.getElementById(id);
+        slider.addEventListener('input', () => updateWeightLabel(`${id}Val`, Number(slider.value)));
+      });
+
+      document.getElementById('generateReplies').addEventListener('click', () =>
+        withButton(document.getElementById('generateReplies'), async () => {
+          const text = document.getElementById('herMessage').value;
+          const res = await apiFetch('/api/message/generate', { method: 'POST', body: JSON.stringify({ text }) });
+          suggestionsBox.textContent = res.suggestions || '—';
+          await refreshStatus();
+          return res;
+        })
+      );
+
+      const tweakMap = {
+        tweakShort: 'short',
+        tweakFunny: 'funny',
+        tweakBolder: 'bolder',
+        tweakInvite: 'invite',
+        tweakWhy: 'why',
+      };
+      Object.entries(tweakMap).forEach(([id, type]) => {
+        document.getElementById(id).addEventListener('click', () =>
+          withButton(document.getElementById(id), async () => {
+            const res = await apiFetch('/api/message/tweak', { method: 'POST', body: JSON.stringify({ type }) });
+            suggestionsBox.textContent = res.suggestions || '—';
+            await refreshStatus();
+            return res;
+          })
+        );
+      });
+
+      document.getElementById('commitBest').addEventListener('click', () =>
+        withButton(document.getElementById('commitBest'), async () => {
+          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ which: 'best' }) });
+          await refreshStatus();
+          return res;
+        })
+      );
+      document.getElementById('commitAlt1').addEventListener('click', () =>
+        withButton(document.getElementById('commitAlt1'), async () => {
+          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ which: 'alt1' }) });
+          await refreshStatus();
+          return res;
+        })
+      );
+      document.getElementById('commitAlt2').addEventListener('click', () =>
+        withButton(document.getElementById('commitAlt2'), async () => {
+          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ which: 'alt2' }) });
+          await refreshStatus();
+          return res;
+        })
+      );
+      document.getElementById('commitAlt3').addEventListener('click', () =>
+        withButton(document.getElementById('commitAlt3'), async () => {
+          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ which: 'alt3' }) });
+          await refreshStatus();
+          return res;
+        })
+      );
+      document.getElementById('commitManual').addEventListener('click', () =>
+        withButton(document.getElementById('commitManual'), async () => {
+          const text = document.getElementById('manualReply').value;
+          const res = await apiFetch('/api/message/commit', { method: 'POST', body: JSON.stringify({ text }) });
+          await refreshStatus();
+          return res;
+        })
+      );
+
+      const outcomeMap = {
+        outReplied: 'replied',
+        outStrong: 'strongReplied',
+        outDatePlanned: 'datePlanned',
+        outDate: 'date',
+        outGhost: 'ghost',
+      };
+      Object.entries(outcomeMap).forEach(([id, outcome]) => {
+        document.getElementById(id).addEventListener('click', () =>
+          withButton(document.getElementById(id), async () => {
+            const res = await apiFetch('/api/message/outcome', { method: 'POST', body: JSON.stringify({ outcome }) });
+            await refreshStatus();
+            await refreshStats();
+            return res;
+          })
+        );
+      });
+
+      document.getElementById('refreshGirls').addEventListener('click', () =>
+        withButton(document.getElementById('refreshGirls'), refreshGirls)
+      );
+      document.getElementById('applyGirl').addEventListener('click', () =>
+        withButton(document.getElementById('applyGirl'), async () => {
+          const name = document.getElementById('girlsList').value;
+          const res = await apiFetch('/api/girls/active', { method: 'POST', body: JSON.stringify({ name }) });
+          await refreshGirls();
+          return res;
+        })
+      );
+      document.getElementById('createGirl').addEventListener('click', () =>
+        withButton(document.getElementById('createGirl'), async () => {
+          const name = document.getElementById('newGirlName').value.trim();
+          const res = await apiFetch('/api/girls/active', { method: 'POST', body: JSON.stringify({ name }) });
+          await refreshGirls();
+          return res;
+        })
+      );
+
+      document.getElementById('applyContext').addEventListener('click', () =>
+        withButton(document.getElementById('applyContext'), () => {
+          const text = document.getElementById('contextText').value;
+          return apiFetch('/api/context', { method: 'POST', body: JSON.stringify({ text }) });
+        })
+      );
+      document.getElementById('resetDialog').addEventListener('click', () =>
+        withButton(document.getElementById('resetDialog'), () => apiFetch('/api/reset', { method: 'POST' }))
+      );
+
+      document.getElementById('addNote').addEventListener('click', () =>
+        withButton(document.getElementById('addNote'), async () => {
+          const text = document.getElementById('noteInput').value;
+          const res = await apiFetch('/api/notes', { method: 'POST', body: JSON.stringify({ text }) });
+          await refreshNotes();
+          return res;
+        })
       );
 
       document.getElementById('btnAnalyze').addEventListener('click', () =>
-        withButton(document.getElementById('btnAnalyze'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/analyze' }) }))
+        withButton(document.getElementById('btnAnalyze'), () => apiFetch('/api/message/analyzeLast', { method: 'POST' }))
       );
       document.getElementById('btnFlags').addEventListener('click', () =>
         withButton(document.getElementById('btnFlags'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/flags' }) }))
       );
       document.getElementById('btnDateplan').addEventListener('click', () =>
         withButton(document.getElementById('btnDateplan'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/dateplan' }) }))
-      );
-
-      document.getElementById('btnStats').addEventListener('click', () =>
-        withButton(document.getElementById('btnStats'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/stats' }) }))
-      );
-      document.getElementById('btnGstats').addEventListener('click', () =>
-        withButton(document.getElementById('btnGstats'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/gstats' }) }))
-      );
-      document.getElementById('btnScore').addEventListener('click', () =>
-        withButton(document.getElementById('btnScore'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/score' }) }))
-      );
-      document.getElementById('btnGscore').addEventListener('click', () =>
-        withButton(document.getElementById('btnGscore'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/gscore' }) }))
-      );
-
-      document.getElementById('btnModes').addEventListener('click', () =>
-        withButton(document.getElementById('btnModes'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/modes' }) }))
-      );
-      document.getElementById('btnGmodes').addEventListener('click', () =>
-        withButton(document.getElementById('btnGmodes'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/gmodes' }) }))
       );
 
       document.getElementById('btnSent').addEventListener('click', () =>
@@ -430,30 +663,86 @@
         })
       );
 
-      document.getElementById('btnExport').addEventListener('click', () =>
-        withButton(document.getElementById('btnExport'), () => apiFetch('/api/export'))
+      document.getElementById('btnStats').addEventListener('click', () =>
+        withButton(document.getElementById('btnStats'), async () => {
+          const res = await apiFetch('/api/stats');
+          statsBox.textContent = JSON.stringify(res, null, 2);
+          return res;
+        })
       );
+      document.getElementById('btnGstats').addEventListener('click', () =>
+        withButton(document.getElementById('btnGstats'), async () => {
+          const res = await apiFetch('/api/gstats');
+          statsBox.textContent = JSON.stringify(res, null, 2);
+          return res;
+        })
+      );
+      document.getElementById('btnModes').addEventListener('click', () =>
+        withButton(document.getElementById('btnModes'), async () => {
+          const res = await apiFetch('/api/modes');
+          statsBox.textContent = JSON.stringify(res, null, 2);
+          return res;
+        })
+      );
+      document.getElementById('btnGmodes').addEventListener('click', () =>
+        withButton(document.getElementById('btnGmodes'), async () => {
+          const res = await apiFetch('/api/gmodes');
+          statsBox.textContent = JSON.stringify(res, null, 2);
+          return res;
+        })
+      );
+
+      document.getElementById('btnExport').addEventListener('click', () =>
+        withButton(document.getElementById('btnExport'), async () => {
+          const res = await apiFetch('/api/export');
+          exportBox.textContent = JSON.stringify(res, null, 2);
+          return res;
+        })
+      );
+      document.getElementById('btnDownloadExport').addEventListener('click', async () => {
+        try {
+          const res = await apiFetch('/api/export');
+          const blob = new Blob([JSON.stringify(res, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'data.json';
+          link.click();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          setLog({ error: err.message });
+        }
+      });
       document.getElementById('btnBackup').addEventListener('click', () =>
-        withButton(document.getElementById('btnBackup'), () => apiFetch('/api/backup', { method: 'POST' }))
+        withButton(document.getElementById('btnBackup'), async () => {
+          const res = await apiFetch('/api/backup', { method: 'POST' });
+          document.getElementById('backupName').value = res.name || '';
+          return res;
+        })
       );
       document.getElementById('btnDownloadBackup').addEventListener('click', async () => {
         const name = document.getElementById('backupName').value.trim();
         if (!name) return;
-        const token = localStorage.getItem('webToken') || '';
-        const res = await fetch(`/api/backup/${encodeURIComponent(name)}`, {
-          headers: { 'x-web-token': token },
-        });
-        if (!res.ok) {
-          setLog({ error: 'Backup not found' });
-          return;
+        try {
+          const token = localStorage.getItem('webToken') || '';
+          const userId = localStorage.getItem('webUserId') || 'web';
+          const res = await fetch(`/api/backup/${encodeURIComponent(name)}`, {
+            headers: { 'x-web-token': token, 'x-user-id': userId },
+          });
+          if (!res.ok) {
+            setLog({ error: 'Backup not found' });
+            return;
+          }
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = name;
+          link.click();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          setLog({ error: err.message });
         }
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = name;
-        link.click();
-        URL.revokeObjectURL(url);
       });
 
       document.getElementById('runCommand').addEventListener('click', () =>
@@ -463,8 +752,23 @@
         })
       );
 
+      async function refreshStats() {
+        const res = await apiFetch('/api/stats');
+        statsBox.textContent = JSON.stringify(res, null, 2);
+      }
+
+      let refreshTimer = null;
+      function startAutoRefresh() {
+        if (refreshTimer) clearInterval(refreshTimer);
+        refreshTimer = setInterval(refreshStatus, 5000);
+      }
+      document.getElementById('autoRefresh').addEventListener('change', (e) => {
+        if (e.target.checked) startAutoRefresh();
+        else if (refreshTimer) clearInterval(refreshTimer);
+      });
+
       refreshStatus();
-      setInterval(refreshStatus, 5000);
+      startAutoRefresh();
     </script>
   </body>
 </html>
