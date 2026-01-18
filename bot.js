@@ -5,7 +5,7 @@ import { Telegraf, Markup } from 'telegraf';
 import OpenAI from 'openai';
 import { fileURLToPath } from 'url';
 import { createCommands } from './core/commands.js';
-import { getDataFile, loadStore } from './core/dataStore.js';
+import { loadStore } from './core/dataStore.js';
 import {
   getGirl,
   getUser,
@@ -14,15 +14,7 @@ import {
   stageLabel,
 } from './core/state.js';
 import {
-  addGirlNote,
   getActiveGirl,
-  getContext,
-  listGirlNotes,
-  listGirls,
-  resetContext,
-  resetGirl,
-  setActiveGirl,
-  setContext,
 } from './core/girls.js';
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
@@ -80,6 +72,21 @@ function combinedKeyboard(options = {}) {
   return Markup.inlineKeyboard(rows);
 }
 
+async function runCommand(ctx, commandText) {
+  try {
+    const res = await commands.executeCommand(ctx.from.id, commandText);
+    if (commandText.startsWith('/export') && res.data?.filePath) {
+      return ctx.replyWithDocument({ source: res.data.filePath, filename: 'data.json' }, { caption: 'Твой data.json (экспорт)' });
+    }
+    if (commandText.startsWith('/backup') && res.data?.path) {
+      return ctx.replyWithDocument({ source: res.data.path, filename: res.data.name }, { caption: 'Бэкап создан' });
+    }
+    return ctx.reply(res.message || JSON.stringify(res.data || {}, null, 2));
+  } catch (e) {
+    return ctx.reply(`Ошибка: ${e?.message ?? 'unknown'}`);
+  }
+}
+
 // --------------------
 // Commands: core
 // --------------------
@@ -117,287 +124,121 @@ bot.start(async (ctx) => {
 });
 
 bot.command('girl', async (ctx) => {
-  const name = ctx.message.text.replace('/girl', '').trim();
-  if (!name) return ctx.reply('Пример: /girl anya');
-  const { key, girl } = setActiveGirl(ctx.from.id, name);
-  await ctx.reply(
-    `Ок. Активная: ${key}\nКонтекст: ${girl.ctx}\nNotes: ${(girl.notes || []).length}\nСтадия: ${girl.stage} (${stageLabel(girl.stage)})\nSuccess: ${scoreText(girl.conv)}`
-  );
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('girls', async (ctx) => {
-  const names = listGirls(ctx.from.id);
-  const { key } = getActiveGirl(ctx.from.id);
-  await ctx.reply(`Девушки: ${names.join(', ')}\nАктивная: ${key}`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('ctx', async (ctx) => {
-  const text = ctx.message.text.replace('/ctx', '').trim();
-  if (!text) return ctx.reply('Пример: /ctx познакомились в инсте, любит кофе');
-  setContext(ctx.from.id, text);
-  await ctx.reply('Контекст сохранён.');
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('reset', async (ctx) => {
-  const { key } = resetGirl(ctx.from.id);
-  await ctx.reply(`Ок. История и тред очищены для "${key}"`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 // notes
 bot.command('note', async (ctx) => {
-  const text = ctx.message.text.replace('/note', '').trim();
-  if (!text) return ctx.reply('Пример: /note любит кофе, не любит пассивную агрессию');
-  const { key, girl } = addGirlNote(ctx.from.id, text);
-  await ctx.reply(`Сохранил заметку для "${key}". Всего notes: ${girl.notes.length}`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('notes', async (ctx) => {
-  const { key, notes } = listGirlNotes(ctx.from.id);
-  const last = (notes || []).slice(-12);
-  if (!last.length) return ctx.reply(`У "${key}" пока нет заметок. Добавь: /note ...`);
-  await ctx.reply(`Заметки "${key}" (последние):\n` + last.map((n, i) => `• ${i + 1}) ${n.text}`).join('\n'));
+  await runCommand(ctx, ctx.message.text);
 });
 
 // toggles
 bot.command('autopick', async (ctx) => {
-  const arg = ctx.message.text.replace('/autopick', '').trim().toLowerCase();
-  if (!arg) {
-    const status = commands.getStatus(ctx.from.id).settings.autopick;
-    return ctx.reply(`Сейчас autopick: ${status ? 'ON' : 'OFF'}\nПример: /autopick on`);
-  }
-  const next = arg === 'on' || arg === 'true' || arg === '1';
-  commands.setAutopick(ctx.from.id, next);
-  await ctx.reply(`A/B autopick: ${next ? 'ON' : 'OFF'}`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('autoghost', async (ctx) => {
-  const arg = ctx.message.text.replace('/autoghost', '').trim().toLowerCase();
-  if (!arg) {
-    const hours = commands.getStatus(ctx.from.id).settings.autoghostHours;
-    return ctx.reply(`Сейчас autoghost: ${hours}h\nПример: /autoghost 48 или /autoghost off`);
-  }
-  if (arg === 'off') {
-    commands.setAutoghost(ctx.from.id, 0);
-    return ctx.reply('Autoghost выключен.');
-  }
-  try {
-    const hours = commands.setAutoghost(ctx.from.id, arg);
-    await ctx.reply(`Autoghost: ${hours}h`);
-  } catch {
-    await ctx.reply('Введи часы (1..720) или off.');
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('pacing', async (ctx) => {
-  const arg = ctx.message.text.replace('/pacing', '').trim().toLowerCase();
-  if (!arg) {
-    const pacing = commands.getStatus(ctx.from.id).settings.pacing;
-    return ctx.reply(`Сейчас pacing: ${pacing}\nПример: /pacing warm`);
-  }
-  try {
-    const pacing = commands.setPacing(ctx.from.id, arg);
-    await ctx.reply(`Pacing: ${pacing}`);
-  } catch {
-    await ctx.reply('Варианты: /pacing warm или /pacing fast');
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('learn', async (ctx) => {
-  const arg = ctx.message.text.replace('/learn', '').trim().toLowerCase();
-  if (!arg) {
-    const enabled = commands.getStatus(ctx.from.id).learning.enabled;
-    return ctx.reply(`Сейчас learning: ${enabled ? 'ON' : 'OFF'}\nПример: /learn on`);
-  }
-  if (arg !== 'on' && arg !== 'off') return ctx.reply('Варианты: /learn on или /learn off');
-  const enabled = commands.setLearning(ctx.from.id, arg === 'on');
-  await ctx.reply(`Learning: ${enabled ? 'ON' : 'OFF'}`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('learn_debug', async (ctx) => {
-  const arg = ctx.message.text.replace('/learn_debug', '').trim().toLowerCase();
-  if (!arg) {
-    const enabled = commands.getStatus(ctx.from.id).learning.debug;
-    return ctx.reply(`Сейчас learn_debug: ${enabled ? 'ON' : 'OFF'}\nПример: /learn_debug on`);
-  }
-  if (arg !== 'on' && arg !== 'off') return ctx.reply('Варианты: /learn_debug on или /learn_debug off');
-  const enabled = commands.setLearnDebug(ctx.from.id, arg === 'on');
-  await ctx.reply(`Learn debug: ${enabled ? 'ON' : 'OFF'}`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('profile', async (ctx) => {
-  const profile = commands.getProfile(ctx.from.id);
-  const topModes = profile.topModes.length ? profile.topModes.map((m) => `${m.mode}:${m.score}`).join(', ') : 'нет данных';
-  await ctx.reply(
-    `Learning: ${profile.enabled ? 'ON' : 'OFF'}\n` +
-      `Top modes: ${topModes}\n` +
-      `Weights: W:${profile.weights.warmth.toFixed(2)} B:${profile.weights.brevity.toFixed(2)} H:${profile.weights.humor.toFixed(2)} ` +
-      `C:${profile.weights.curiosity.toFixed(2)} F:${profile.weights.flirt.toFixed(2)} I:${profile.weights.inviteRate.toFixed(2)}`
-  );
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('tune', async (ctx) => {
-  const args = ctx.message.text.replace('/tune', '').trim().split(/\s+/).filter(Boolean);
-  if (args.length < 2) return ctx.reply('Пример: /tune warmth 0.8');
-  const [key, rawValue] = args;
-  try {
-    const value = commands.tuneWeight(ctx.from.id, key, rawValue);
-    await ctx.reply(`OK. ${key}=${value.toFixed(2)}`);
-  } catch {
-    await ctx.reply('Ключи: warmth, brevity, humor, curiosity, flirt, inviteRate');
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('reset_learn', async (ctx) => {
-  commands.resetLearning(ctx.from.id);
-  await ctx.reply('Learning сброшен к дефолту.');
+  await runCommand(ctx, ctx.message.text);
 });
 
 // ice / reengage / analyze / flags / dateplan
 bot.command('ice', async (ctx) => {
-  const user = getUser(ctx.from.id);
-  const { key, data: girl } = getGirl(user, user.activeGirl);
-  await ctx.reply(`Думаю… (ice для "${key}")`);
-  try {
-    const out = await commands.askLLM(
-      `Сгенерируй 5 коротких сообщений, чтобы начать/перезапустить диалог.\n2 варианта с лёгким юмором, 2 спокойных, 1 мягко к встрече. 1–2 строки.\n\nПОРТРЕТ:\n${JSON.stringify(user.profile)}\nКонтекст:\n${girl.ctx}\nЗаметки:\n${girl.notes || []}`
-    );
-    await ctx.reply(out || 'Не получилось. Попробуй ещё раз.');
-  } catch (e) {
-    await ctx.reply(`Ошибка: ${e?.message ?? 'unknown'}`);
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('reengage', async (ctx) => {
-  const user = getUser(ctx.from.id);
-  const { key, data: girl } = getGirl(user, user.activeGirl);
-  const arg = ctx.message.text.replace('/reengage', '').trim();
-  let hours = 24;
-  if (arg) {
-    const n = Number(arg);
-    if (Number.isFinite(n) && n > 0 && n < 1000) hours = Math.round(n);
-  }
-  await ctx.reply(`Думаю… (разморозка ${hours}ч для "${key}")`);
-  try {
-    const out = await commands.askLLM(
-      `Пауза ~${hours} часов. Сгенерируй 4 коротких сообщения:\n1) лёгкое уверенное\n2) с юмором\n3) тёплое\n4) с мягким переводом к встрече/созвону\nБез обид и пассивной агрессии. 1–2 строки каждое.\n\nПОРТРЕТ:\n${JSON.stringify(user.profile)}\nКонтекст:\n${girl.ctx}\nЗаметки:\n${girl.notes || []}`
-    );
-    await ctx.reply(out || 'Не получилось. Попробуй ещё раз.');
-  } catch (e) {
-    await ctx.reply(`Ошибка: ${e?.message ?? 'unknown'}`);
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('analyze', async (ctx) => {
-  try {
-    const out = await commands.analyzeLastMessage(ctx.from.id);
-    await ctx.reply(out || 'Не получилось. Попробуй ещё раз.');
-  } catch (e) {
-    await ctx.reply(`Ошибка: ${e?.message ?? 'unknown'}`);
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('flags', async (ctx) => {
-  const user = getUser(ctx.from.id);
-  const { data: girl } = getGirl(user, user.activeGirl);
-  try {
-    const out = await commands.askLLM(
-      `По переписке выдели:\n- Зеленые сигналы (интерес)\n- Желтые (неясность)\n- Красные (риски/токсичность/слив)\nДай короткие советы: что делать дальше.\n\nКонтекст:\n${girl.ctx}\nИстория:\n${girl.history?.length ? girl.history.map((h) => (h.role === 'her' ? `Она: ${h.text}` : `Я: ${h.text}`)).join('\n') : 'нет'}`
-    );
-    await ctx.reply(out || 'Не получилось. Попробуй ещё раз.');
-  } catch (e) {
-    await ctx.reply(`Ошибка: ${e?.message ?? 'unknown'}`);
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('dateplan', async (ctx) => {
-  const user = getUser(ctx.from.id);
-  const { data: girl } = getGirl(user, user.activeGirl);
-  try {
-    const out = await commands.askLLM(
-      `Сделай план приглашения и встречи:\n1) 3 сообщения-приглашения (разные стили: спокойное/с юмором/уверенное)\n2) 3 варианта формата встречи (простые и реалистичные)\n3) Сообщение в день встречи (подтверждение)\n4) Если она “не может” — 2 варианта переноса без давления\n5) После встречи — 2 сообщения\n\nКонтекст:\n${girl.ctx}\nИстория:\n${girl.history?.length ? girl.history.map((h) => (h.role === 'her' ? `Она: ${h.text}` : `Я: ${h.text}`)).join('\n') : 'нет'}`
-    );
-    await ctx.reply(out || 'Не получилось. Попробуй ещё раз.');
-  } catch (e) {
-    await ctx.reply(`Ошибка: ${e?.message ?? 'unknown'}`);
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 // export / backup
 bot.command('export', async (ctx) => {
-  try {
-    await ctx.replyWithDocument({ source: path.resolve(getDataFile()), filename: 'data.json' }, { caption: 'Твой data.json (экспорт)' });
-  } catch (e) {
-    await ctx.reply(`Ошибка экспорта: ${e?.message ?? 'unknown'}`);
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('backup', async (ctx) => {
-  try {
-    const backup = commands.backupData();
-    await ctx.replyWithDocument({ source: backup.path, filename: backup.name }, { caption: 'Бэкап создан' });
-  } catch (e) {
-    await ctx.reply(`Ошибка бэкапа: ${e?.message ?? 'unknown'}`);
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 // stats/modes/score
 bot.command('stats', async (ctx) => {
-  const { stats, hint, score } = commands.getStats(ctx.from.id);
-  await ctx.reply(
-    `Стата (общая):\n` +
-      `sent=${stats.sent}\nreplied=${stats.replied} (${Math.round((stats.replied / (stats.sent || 1)) * 100)}%)\n` +
-      `strongReplied=${stats.strongReplied}\n` +
-      `dates=${stats.dates} (${Math.round((stats.dates / (stats.sent || 1)) * 100)}%)\n` +
-      `datePlanned=${stats.datePlanned}\n` +
-      `ghost=${stats.ghosts}\n\n` +
-      `Success Score: ${score}\n` +
-      `Адаптация: ${hint.summary}\nИнструкция: ${hint.instruction}\n` +
-      `A/B autopick: ${commands.getStatus(ctx.from.id).settings.autopick ? 'ON' : 'OFF'} | Pacing: ${commands.getStatus(ctx.from.id).settings.pacing} | Autoghost: ${commands.getStatus(ctx.from.id).settings.autoghostHours}h`
-  );
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('gstats', async (ctx) => {
-  const { girl, stats, score } = commands.getGstats(ctx.from.id);
-  await ctx.reply(
-    `Стата по "${girl}":\n` +
-      `sent=${stats.sent}\nreplied=${stats.replied} (${Math.round((stats.replied / (stats.sent || 1)) * 100)}%)\n` +
-      `strongReplied=${stats.strongReplied}\n` +
-      `dates=${stats.dates} (${Math.round((stats.dates / (stats.sent || 1)) * 100)}%)\n` +
-      `datePlanned=${stats.datePlanned}\n` +
-      `ghost=${stats.ghosts}\n\n` +
-      `Success Score: ${score}`
-  );
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('score', async (ctx) => {
-  await ctx.reply(`Success Score (общий): ${commands.getScore(ctx.from.id)}`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('gscore', async (ctx) => {
-  const { girl, score } = commands.getGscore(ctx.from.id);
-  await ctx.reply(`Success Score по "${girl}": ${score}`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('modes', async (ctx) => {
-  const rep = commands.getModes(ctx.from.id);
-  await ctx.reply(`Стратегии (общие):\n${rep.lines}\n\nТоп сейчас: ${rep.bestMode}`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 bot.command('gmodes', async (ctx) => {
-  const { girl, report } = commands.getGModes(ctx.from.id);
-  await ctx.reply(`Стратегии по "${girl}":\n${report.lines}\n\nТоп сейчас: ${report.bestMode}`);
+  await runCommand(ctx, ctx.message.text);
 });
 
 // manual /sent
 bot.command('sent', async (ctx) => {
-  const text = ctx.message.text.replace('/sent', '').trim();
-  if (!text) return ctx.reply('Пример: /sent я тоже люблю кофе, давай проверим твоё место 🙂');
-  try {
-    commands.commitReply(ctx.from.id, { text });
-    await ctx.reply('Ок. Сохранил твоё сообщение как "Я:" + увеличил sent и открыл/обновил тред.');
-  } catch (e) {
-    await ctx.reply(`Ошибка: ${e?.message ?? 'unknown'}`);
-  }
+  await runCommand(ctx, ctx.message.text);
 });
 
 // --------------------
@@ -517,6 +358,10 @@ app.use('/web', express.static(path.join(__dirname, 'web')));
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/admin.html', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'web', 'admin.html'));
 });
 
 app.use('/api', (req, res, next) => {
@@ -699,6 +544,15 @@ app.post('/api/message/outcome', (req, res) => {
     res.json(result);
   } catch (e) {
     res.status(400).json({ error: e?.message || 'Failed to record outcome' });
+  }
+});
+
+app.post('/api/command', async (req, res) => {
+  try {
+    const result = await commands.executeCommand(req.headers['x-user-id'] || 'web', req.body?.command || '');
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e?.message || 'Command failed' });
   }
 });
 

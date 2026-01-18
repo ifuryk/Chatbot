@@ -6,94 +6,95 @@
     <title>DM Bot Admin</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
         margin: 0;
+        font-family: Arial, sans-serif;
         background: #0f1115;
         color: #e6e6e6;
       }
       header {
-        padding: 16px 24px;
-        border-bottom: 1px solid #222;
         display: flex;
         justify-content: space-between;
         align-items: center;
-      }
-      .container {
-        display: flex;
-        min-height: 100vh;
-      }
-      nav {
-        width: 220px;
-        border-right: 1px solid #222;
-        padding: 24px;
-      }
-      nav button {
-        width: 100%;
-        margin-bottom: 8px;
-        padding: 10px 12px;
-        background: #1b1f2a;
-        border: none;
-        color: #e6e6e6;
-        cursor: pointer;
-        text-align: left;
-        border-radius: 6px;
-      }
-      nav button.active {
-        background: #2b61ff;
+        padding: 16px 24px;
+        border-bottom: 1px solid #222;
       }
       main {
-        flex: 1;
         padding: 24px;
+        display: grid;
+        gap: 16px;
       }
-      section {
-        display: none;
-      }
-      section.active {
-        display: block;
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       }
       .card {
         background: #171a23;
-        padding: 16px;
-        border-radius: 10px;
-        margin-bottom: 16px;
         border: 1px solid #222;
+        border-radius: 10px;
+        padding: 16px;
       }
-      .row {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
+      h2 {
+        margin-top: 0;
       }
       label {
         font-size: 12px;
-        opacity: 0.8;
+        opacity: 0.7;
       }
       input,
       select,
       textarea {
         width: 100%;
         padding: 8px;
+        margin-top: 6px;
         background: #0f1115;
-        color: #e6e6e6;
         border: 1px solid #333;
+        color: #e6e6e6;
         border-radius: 6px;
       }
       textarea {
-        min-height: 100px;
+        min-height: 90px;
       }
-      button.action {
+      button {
+        margin-top: 8px;
         padding: 10px 14px;
         background: #2b61ff;
-        color: #fff;
         border: none;
+        color: #fff;
         border-radius: 6px;
         cursor: pointer;
       }
-      .muted {
-        opacity: 0.7;
+      button[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #1b1f2a;
         font-size: 12px;
       }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #999;
+      }
       pre {
-        white-space: pre-wrap;
+        background: #0f1115;
+        border: 1px solid #333;
+        padding: 12px;
+        border-radius: 6px;
+        max-height: 240px;
+        overflow: auto;
       }
     </style>
   </head>
@@ -101,265 +102,349 @@
     <header>
       <div>
         <strong>DM Bot Admin</strong>
-        <span class="muted">/web/admin.html</span>
+        <span class="status-pill"><span id="botDot" class="dot"></span>Bot <span id="botStatus">OFF</span></span>
+        <span class="status-pill">Learning <span id="learningStatus">OFF</span></span>
       </div>
       <div>
-        <label>WEB токен</label>
+        <label>WEB_TOKEN</label>
         <input id="tokenInput" placeholder="x-web-token" />
       </div>
     </header>
 
-    <div class="container">
-      <nav>
-        <button data-tab="dashboard" class="active">Dashboard</button>
-        <button data-tab="dialog">Dialog</button>
-        <button data-tab="settings">Settings</button>
-        <button data-tab="stats">Stats</button>
-        <button data-tab="export">Export</button>
-      </nav>
+    <main>
+      <div class="card">
+        <h2>Status</h2>
+        <button id="refreshStatus">Обновить статус</button>
+        <pre id="statusBox">—</pre>
+      </div>
 
-      <main>
-        <section id="dashboard" class="active">
-          <div class="card">
-            <h3>Статус</h3>
-            <pre id="statusBox">—</pre>
-          </div>
-          <div class="card">
-            <h3>Быстрые переключатели</h3>
-            <div class="row">
-              <button class="action" id="toggleLearn">Learn</button>
-              <button class="action" id="toggleAutopick">Autopick</button>
-              <button class="action" id="togglePacing">Pacing</button>
-              <button class="action" id="toggleAutoghost">Autoghost</button>
-            </div>
-          </div>
-        </section>
+      <div class="card">
+        <h2>Learning toggle</h2>
+        <div class="row">
+          <button id="learnOn">Learn ON</button>
+          <button id="learnOff">Learn OFF</button>
+          <button id="learnDebugOn">Debug ON</button>
+          <button id="learnDebugOff">Debug OFF</button>
+          <button id="resetLearn">Reset Learn</button>
+        </div>
+      </div>
 
-        <section id="dialog">
-          <div class="card">
-            <h3>Активная девушка</h3>
-            <div class="row">
-              <select id="girlSelect"></select>
-              <button class="action" id="setGirl">Выбрать</button>
-            </div>
+      <div class="grid">
+        <div class="card">
+          <h2>Girls</h2>
+          <select id="girlsList"></select>
+          <div class="row">
+            <button id="applyGirl">Выбрать активную</button>
+            <button id="refreshGirls">/girls</button>
           </div>
-          <div class="card">
-            <h3>Контекст</h3>
-            <textarea id="contextInput"></textarea>
-            <div class="row">
-              <button class="action" id="saveContext">Сохранить</button>
-              <button class="action" id="resetContext">Сбросить</button>
-            </div>
+        </div>
+        <div class="card">
+          <h2>Context</h2>
+          <textarea id="contextText"></textarea>
+          <div class="row">
+            <button id="applyContext">Применить контекст</button>
+            <button id="resetDialog">/reset</button>
           </div>
-          <div class="card">
-            <h3>Сообщение от неё</h3>
-            <textarea id="incomingText"></textarea>
-            <button class="action" id="generateReplies">Сгенерировать ответы</button>
-            <pre id="replyOutput">—</pre>
-            <div class="row">
-              <button class="action" data-commit="best">Commit Best</button>
-              <button class="action" data-commit="alt1">Commit Alt1</button>
-              <button class="action" data-commit="alt2">Commit Alt2</button>
-              <button class="action" data-commit="alt3">Commit Alt3</button>
-            </div>
-          </div>
-          <div class="card">
-            <h3>Отправить своё сообщение</h3>
-            <textarea id="sendText"></textarea>
-            <button class="action" id="sendManual">Отправил (record)</button>
-          </div>
-        </section>
+        </div>
+        <div class="card">
+          <h2>Notes</h2>
+          <pre id="notesBox">—</pre>
+          <textarea id="noteInput" placeholder="Новая заметка"></textarea>
+          <button id="addNote">Добавить заметку</button>
+        </div>
+      </div>
 
-        <section id="settings">
-          <div class="card">
-            <h3>Learning</h3>
-            <div class="row">
-              <input id="tuneKey" placeholder="warmth | brevity | humor | curiosity | flirt | inviteRate" />
-              <input id="tuneValue" placeholder="0..1" />
-              <button class="action" id="tuneBtn">Tune</button>
-              <button class="action" id="resetLearn">Reset Learn</button>
-            </div>
+      <div class="grid">
+        <div class="card">
+          <h2>Automation</h2>
+          <div class="row">
+            <button id="autopickOn">Autopick ON</button>
+            <button id="autopickOff">Autopick OFF</button>
           </div>
-          <div class="card">
-            <h3>Reset</h3>
-            <button class="action" id="resetDialog">Reset Dialog</button>
+          <div class="row">
+            <input id="autoghostHours" placeholder="autoghost hours or off" />
+            <button id="setAutoghost">Apply</button>
           </div>
-        </section>
+          <div class="row">
+            <button id="pacingWarm">Pacing warm</button>
+            <button id="pacingFast">Pacing fast</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Analytics / Plans</h2>
+          <div class="row">
+            <button id="btnAnalyze">/analyze</button>
+            <button id="btnFlags">/flags</button>
+            <button id="btnDateplan">/dateplan</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Stats</h2>
+          <div class="row">
+            <button id="btnStats">/stats</button>
+            <button id="btnGstats">/gstats</button>
+            <button id="btnScore">/score</button>
+            <button id="btnGscore">/gscore</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Modes</h2>
+          <div class="row">
+            <button id="btnModes">/modes</button>
+            <button id="btnGmodes">/gmodes</button>
+          </div>
+        </div>
+      </div>
 
-        <section id="stats">
-          <div class="card">
-            <h3>Stats</h3>
-            <pre id="statsBox">—</pre>
+      <div class="grid">
+        <div class="card">
+          <h2>Messaging</h2>
+          <textarea id="sentText" placeholder="/sent текст"></textarea>
+          <button id="btnSent">/sent</button>
+          <input id="reengageHours" placeholder="reengage hours (optional)" />
+          <button id="btnReengage">/reengage</button>
+        </div>
+        <div class="card">
+          <h2>Export / Backup</h2>
+          <div class="row">
+            <button id="btnExport">/export</button>
+            <button id="btnBackup">/backup</button>
           </div>
-          <div class="card">
-            <h3>Modes</h3>
-            <pre id="modesBox">—</pre>
-          </div>
-        </section>
+          <input id="backupName" placeholder="backup filename" />
+          <button id="btnDownloadBackup">Download backup</button>
+        </div>
+        <div class="card">
+          <h2>Command Runner</h2>
+          <input id="commandInput" placeholder="/girl Masha" />
+          <button id="runCommand">Run</button>
+        </div>
+      </div>
 
-        <section id="export">
-          <div class="card">
-            <h3>Экспорт</h3>
-            <button class="action" id="exportBtn">Export data.json</button>
-            <button class="action" id="backupBtn">Create backup</button>
-            <input id="backupName" placeholder="backup filename" />
-            <button class="action" id="downloadBackup">Download backup</button>
-          </div>
-          <pre id="exportBox">—</pre>
-        </section>
-      </main>
-    </div>
+      <div class="card">
+        <h2>Output Log</h2>
+        <pre id="logBox">—</pre>
+      </div>
+    </main>
 
     <script>
       const tokenInput = document.getElementById('tokenInput');
-      const storedToken = localStorage.getItem('webToken') || '';
-      tokenInput.value = storedToken;
+      tokenInput.value = localStorage.getItem('webToken') || '';
       tokenInput.addEventListener('input', () => {
         localStorage.setItem('webToken', tokenInput.value.trim());
       });
 
-      const tabs = document.querySelectorAll('nav button');
-      const sections = document.querySelectorAll('main section');
-      tabs.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          tabs.forEach((b) => b.classList.remove('active'));
-          sections.forEach((s) => s.classList.remove('active'));
-          btn.classList.add('active');
-          document.getElementById(btn.dataset.tab).classList.add('active');
-        });
-      });
+      const logBox = document.getElementById('logBox');
+      const statusBox = document.getElementById('statusBox');
+      const botStatus = document.getElementById('botStatus');
+      const botDot = document.getElementById('botDot');
+      const learningStatus = document.getElementById('learningStatus');
 
-      async function api(path, options = {}) {
+      function setLog(payload) {
+        logBox.textContent = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+      }
+
+      async function apiFetch(path, options = {}) {
         const token = localStorage.getItem('webToken') || '';
         const headers = options.headers || {};
         headers['x-web-token'] = token;
         headers['Content-Type'] = 'application/json';
         const res = await fetch(path, { ...options, headers });
+        if (res.status === 401) {
+          throw new Error('Неверный WEB_TOKEN');
+        }
         if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || 'Request failed');
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Request failed');
         }
         return res.json();
       }
 
+      async function withButton(button, fn) {
+        button.disabled = true;
+        try {
+          const result = await fn();
+          setLog(result);
+          return result;
+        } catch (err) {
+          setLog({ error: err.message });
+          throw err;
+        } finally {
+          button.disabled = false;
+        }
+      }
+
       async function refreshStatus() {
-        const status = await api('/api/status');
-        document.getElementById('statusBox').textContent = JSON.stringify(status, null, 2);
+        try {
+          const data = await apiFetch('/api/status');
+          statusBox.textContent = JSON.stringify(data, null, 2);
+          botStatus.textContent = 'ON';
+          botDot.style.background = '#2bff88';
+          learningStatus.textContent = data.learning.enabled ? 'ON' : 'OFF';
+          await refreshGirls();
+          await refreshNotes();
+          return data;
+        } catch (err) {
+          botStatus.textContent = 'OFF';
+          botDot.style.background = '#ff5555';
+          learningStatus.textContent = 'OFF';
+          setLog({ error: err.message });
+        }
       }
 
       async function refreshGirls() {
-        const data = await api('/api/girls');
-        const select = document.getElementById('girlSelect');
-        select.innerHTML = '';
-        data.girls.forEach((g) => {
-          const opt = document.createElement('option');
-          opt.value = g;
-          opt.textContent = g;
-          if (g === data.active) opt.selected = true;
-          select.appendChild(opt);
+        const data = await apiFetch('/api/girls');
+        const list = document.getElementById('girlsList');
+        list.innerHTML = '';
+        data.girls.forEach((name) => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          if (name === data.active) option.selected = true;
+          list.appendChild(option);
         });
-        const ctx = await api('/api/context');
-        document.getElementById('contextInput').value = ctx.context || '';
+        const ctx = await apiFetch('/api/context');
+        document.getElementById('contextText').value = ctx.context || '';
       }
 
-      async function refreshStats() {
-        const stats = await api('/api/stats');
-        const modes = await api('/api/modes');
-        document.getElementById('statsBox').textContent = JSON.stringify(stats, null, 2);
-        document.getElementById('modesBox').textContent = JSON.stringify(modes, null, 2);
+      async function refreshNotes() {
+        const res = await apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/notes' }) });
+        document.getElementById('notesBox').textContent = JSON.stringify(res.data || res, null, 2);
       }
 
-      document.getElementById('toggleLearn').addEventListener('click', async () => {
-        const status = await api('/api/status');
-        await api('/api/learn', { method: 'POST', body: JSON.stringify({ enabled: !status.learning.enabled }) });
-        refreshStatus();
-      });
-      document.getElementById('toggleAutopick').addEventListener('click', async () => {
-        const status = await api('/api/status');
-        await api('/api/autopick', { method: 'POST', body: JSON.stringify({ enabled: !status.settings.autopick }) });
-        refreshStatus();
-      });
-      document.getElementById('togglePacing').addEventListener('click', async () => {
-        const status = await api('/api/status');
-        const pacing = status.settings.pacing === 'warm' ? 'fast' : 'warm';
-        await api('/api/pacing', { method: 'POST', body: JSON.stringify({ pacing }) });
-        refreshStatus();
-      });
-      document.getElementById('toggleAutoghost').addEventListener('click', async () => {
-        const status = await api('/api/status');
-        const hours = status.settings.autoghostHours ? 0 : 48;
-        await api('/api/autoghost', { method: 'POST', body: JSON.stringify({ hours }) });
-        refreshStatus();
-      });
+      document.getElementById('refreshStatus').addEventListener('click', () =>
+        withButton(document.getElementById('refreshStatus'), refreshStatus)
+      );
 
-      document.getElementById('setGirl').addEventListener('click', async () => {
-        const name = document.getElementById('girlSelect').value;
-        await api('/api/girls/active', { method: 'POST', body: JSON.stringify({ name }) });
-        refreshGirls();
-      });
+      document.getElementById('learnOn').addEventListener('click', () =>
+        withButton(document.getElementById('learnOn'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/learn on' }) }))
+      );
+      document.getElementById('learnOff').addEventListener('click', () =>
+        withButton(document.getElementById('learnOff'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/learn off' }) }))
+      );
+      document.getElementById('learnDebugOn').addEventListener('click', () =>
+        withButton(document.getElementById('learnDebugOn'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/learn_debug on' }) }))
+      );
+      document.getElementById('learnDebugOff').addEventListener('click', () =>
+        withButton(document.getElementById('learnDebugOff'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/learn_debug off' }) }))
+      );
+      document.getElementById('resetLearn').addEventListener('click', () =>
+        withButton(document.getElementById('resetLearn'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/reset_learn' }) }))
+      );
 
-      document.getElementById('saveContext').addEventListener('click', async () => {
-        const text = document.getElementById('contextInput').value;
-        await api('/api/context', { method: 'POST', body: JSON.stringify({ text }) });
-      });
+      document.getElementById('applyGirl').addEventListener('click', () =>
+        withButton(document.getElementById('applyGirl'), async () => {
+          const name = document.getElementById('girlsList').value;
+          const res = await apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: `/girl ${name}` }) });
+          await refreshGirls();
+          return res;
+        })
+      );
+      document.getElementById('refreshGirls').addEventListener('click', () =>
+        withButton(document.getElementById('refreshGirls'), () =>
+          apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/girls' }) })
+        )
+      );
 
-      document.getElementById('resetContext').addEventListener('click', async () => {
-        await api('/api/context/reset', { method: 'POST' });
-        refreshGirls();
-      });
+      document.getElementById('applyContext').addEventListener('click', () =>
+        withButton(document.getElementById('applyContext'), () => {
+          const text = document.getElementById('contextText').value;
+          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: `/ctx ${text}` }) });
+        })
+      );
+      document.getElementById('resetDialog').addEventListener('click', () =>
+        withButton(document.getElementById('resetDialog'), () =>
+          apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/reset' }) })
+        )
+      );
 
-      document.getElementById('generateReplies').addEventListener('click', async () => {
-        const text = document.getElementById('incomingText').value;
-        const res = await api('/api/message/generateReplies', { method: 'POST', body: JSON.stringify({ text }) });
-        document.getElementById('replyOutput').textContent = res.suggestions || '—';
-      });
+      document.getElementById('addNote').addEventListener('click', () =>
+        withButton(document.getElementById('addNote'), async () => {
+          const note = document.getElementById('noteInput').value;
+          const res = await apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: `/note ${note}` }) });
+          await refreshNotes();
+          return res;
+        })
+      );
 
-      document.querySelectorAll('[data-commit]').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const which = btn.dataset.commit;
-          const suggestions = document.getElementById('replyOutput').textContent;
-          await api('/api/message/commitReply', { method: 'POST', body: JSON.stringify({ which, suggestions }) });
-        });
-      });
+      document.getElementById('autopickOn').addEventListener('click', () =>
+        withButton(document.getElementById('autopickOn'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/autopick on' }) }))
+      );
+      document.getElementById('autopickOff').addEventListener('click', () =>
+        withButton(document.getElementById('autopickOff'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/autopick off' }) }))
+      );
+      document.getElementById('setAutoghost').addEventListener('click', () =>
+        withButton(document.getElementById('setAutoghost'), () => {
+          const hours = document.getElementById('autoghostHours').value.trim();
+          const cmd = hours ? `/autoghost ${hours}` : '/autoghost';
+          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: cmd }) });
+        })
+      );
+      document.getElementById('pacingWarm').addEventListener('click', () =>
+        withButton(document.getElementById('pacingWarm'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/pacing warm' }) }))
+      );
+      document.getElementById('pacingFast').addEventListener('click', () =>
+        withButton(document.getElementById('pacingFast'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/pacing fast' }) }))
+      );
 
-      document.getElementById('sendManual').addEventListener('click', async () => {
-        const text = document.getElementById('sendText').value;
-        await api('/api/message/send', { method: 'POST', body: JSON.stringify({ text }) });
-      });
+      document.getElementById('btnAnalyze').addEventListener('click', () =>
+        withButton(document.getElementById('btnAnalyze'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/analyze' }) }))
+      );
+      document.getElementById('btnFlags').addEventListener('click', () =>
+        withButton(document.getElementById('btnFlags'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/flags' }) }))
+      );
+      document.getElementById('btnDateplan').addEventListener('click', () =>
+        withButton(document.getElementById('btnDateplan'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/dateplan' }) }))
+      );
 
-      document.getElementById('tuneBtn').addEventListener('click', async () => {
-        const key = document.getElementById('tuneKey').value;
-        const value = document.getElementById('tuneValue').value;
-        await api('/api/tune', { method: 'POST', body: JSON.stringify({ key, value }) });
-      });
+      document.getElementById('btnStats').addEventListener('click', () =>
+        withButton(document.getElementById('btnStats'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/stats' }) }))
+      );
+      document.getElementById('btnGstats').addEventListener('click', () =>
+        withButton(document.getElementById('btnGstats'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/gstats' }) }))
+      );
+      document.getElementById('btnScore').addEventListener('click', () =>
+        withButton(document.getElementById('btnScore'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/score' }) }))
+      );
+      document.getElementById('btnGscore').addEventListener('click', () =>
+        withButton(document.getElementById('btnGscore'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/gscore' }) }))
+      );
 
-      document.getElementById('resetLearn').addEventListener('click', async () => {
-        await api('/api/reset_learn', { method: 'POST' });
-      });
+      document.getElementById('btnModes').addEventListener('click', () =>
+        withButton(document.getElementById('btnModes'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/modes' }) }))
+      );
+      document.getElementById('btnGmodes').addEventListener('click', () =>
+        withButton(document.getElementById('btnGmodes'), () => apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: '/gmodes' }) }))
+      );
 
-      document.getElementById('resetDialog').addEventListener('click', async () => {
-        await api('/api/reset', { method: 'POST' });
-      });
+      document.getElementById('btnSent').addEventListener('click', () =>
+        withButton(document.getElementById('btnSent'), () => {
+          const text = document.getElementById('sentText').value;
+          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: `/sent ${text}` }) });
+        })
+      );
+      document.getElementById('btnReengage').addEventListener('click', () =>
+        withButton(document.getElementById('btnReengage'), () => {
+          const hours = document.getElementById('reengageHours').value.trim();
+          const cmd = hours ? `/reengage ${hours}` : '/reengage';
+          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command: cmd }) });
+        })
+      );
 
-      document.getElementById('exportBtn').addEventListener('click', async () => {
-        const data = await api('/api/export');
-        document.getElementById('exportBox').textContent = JSON.stringify(data, null, 2);
-      });
-
-      document.getElementById('backupBtn').addEventListener('click', async () => {
-        const data = await api('/api/backup', { method: 'POST' });
-        document.getElementById('backupName').value = data.name || '';
-      });
-
-      document.getElementById('downloadBackup').addEventListener('click', async () => {
-        const name = document.getElementById('backupName').value;
+      document.getElementById('btnExport').addEventListener('click', () =>
+        withButton(document.getElementById('btnExport'), () => apiFetch('/api/export'))
+      );
+      document.getElementById('btnBackup').addEventListener('click', () =>
+        withButton(document.getElementById('btnBackup'), () => apiFetch('/api/backup', { method: 'POST' }))
+      );
+      document.getElementById('btnDownloadBackup').addEventListener('click', async () => {
+        const name = document.getElementById('backupName').value.trim();
         if (!name) return;
         const token = localStorage.getItem('webToken') || '';
         const res = await fetch(`/api/backup/${encodeURIComponent(name)}`, {
           headers: { 'x-web-token': token },
         });
         if (!res.ok) {
-          alert('Backup not found');
+          setLog({ error: 'Backup not found' });
           return;
         }
         const blob = await res.blob();
@@ -371,9 +456,15 @@
         URL.revokeObjectURL(url);
       });
 
-      refreshStatus().catch(console.error);
-      refreshGirls().catch(console.error);
-      refreshStats().catch(console.error);
+      document.getElementById('runCommand').addEventListener('click', () =>
+        withButton(document.getElementById('runCommand'), () => {
+          const command = document.getElementById('commandInput').value.trim();
+          return apiFetch('/api/command', { method: 'POST', body: JSON.stringify({ command }) });
+        })
+      );
+
+      refreshStatus();
+      setInterval(refreshStatus, 5000);
     </script>
   </body>
 </html>

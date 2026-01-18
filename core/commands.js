@@ -26,6 +26,7 @@ import {
   weightsSummary,
 } from './state.js';
 import { getDataFile, getStore, saveStore } from './dataStore.js';
+import { addGirlNote, getActiveGirl, getContext, listGirlNotes, listGirls, resetGirl, setActiveGirl, setContext } from './girls.js';
 
 const SYSTEM_PROMPT = `
 Ты ассистент для переписки. Ты формулируешь ответы.
@@ -231,6 +232,107 @@ ${girl.history?.length ? girl.history.map((h) => (h.role === 'her' ? `Она: ${
 
 Её сообщение:
 ${herMessage}
+`.trim();
+
+    return askLLM(prompt);
+  }
+
+  async function flags(userId) {
+    const user = getUser(userId);
+    const { data: girl } = getGirl(user, user.activeGirl);
+    const hint = learningHint(user, girl);
+    const prompt = `
+По переписке выдели:
+- Зеленые сигналы (интерес)
+- Желтые (неясность)
+- Красные (риски/токсичность/слив)
+Дай короткие советы: что делать дальше.
+
+ПОРТРЕТ:
+${renderProfile(user.profile)}
+АДАПТАЦИЯ:
+${hint.summary} | ${hint.instruction}
+
+Контекст:
+${girl.ctx}
+Заметки:
+${renderGirlNotes(girl)}
+История:
+${girl.history?.length ? girl.history.map((h) => (h.role === 'her' ? `Она: ${h.text}` : `Я: ${h.text}`)).join('\n') : 'нет'}
+`.trim();
+
+    return askLLM(prompt);
+  }
+
+  async function datePlan(userId) {
+    const user = getUser(userId);
+    const { data: girl } = getGirl(user, user.activeGirl);
+    const hint = learningHint(user, girl);
+    const prompt = `
+Сделай план приглашения и встречи:
+1) 3 сообщения-приглашения (разные стили: спокойное/с юмором/уверенное)
+2) 3 варианта формата встречи (простые и реалистичные)
+3) Сообщение в день встречи (подтверждение)
+4) Если она “не может” — 2 варианта переноса без давления
+5) После встречи — 2 сообщения
+
+ПОРТРЕТ:
+${renderProfile(user.profile)}
+АДАПТАЦИЯ:
+${hint.summary} | ${hint.instruction}
+
+Контекст:
+${girl.ctx}
+Заметки:
+${renderGirlNotes(girl)}
+История:
+${girl.history?.length ? girl.history.map((h) => (h.role === 'her' ? `Она: ${h.text}` : `Я: ${h.text}`)).join('\n') : 'нет'}
+`.trim();
+
+    return askLLM(prompt);
+  }
+
+  async function ice(userId) {
+    const user = getUser(userId);
+    const { data: girl } = getGirl(user, user.activeGirl);
+    const hint = learningHint(user, girl);
+    const prompt = `
+Сгенерируй 5 коротких сообщений, чтобы начать/перезапустить диалог.
+2 варианта с лёгким юмором, 2 спокойных, 1 мягко к встрече. 1–2 строки.
+
+ПОРТРЕТ:
+${renderProfile(user.profile)}
+АДАПТАЦИЯ:
+${hint.summary} | ${hint.instruction}
+Контекст:
+${girl.ctx}
+Заметки:
+${renderGirlNotes(girl)}
+`.trim();
+
+    return askLLM(prompt);
+  }
+
+  async function reengage(userId, hours = 24) {
+    const user = getUser(userId);
+    const { data: girl } = getGirl(user, user.activeGirl);
+    const hint = learningHint(user, girl);
+    const prompt = `
+Пауза ~${hours} часов. Сгенерируй 4 коротких сообщения:
+1) лёгкое уверенное
+2) с юмором
+3) тёплое
+4) с мягким переводом к встрече/созвону
+Без обид и пассивной агрессии. 1–2 строки каждое.
+
+ПОРТРЕТ:
+${renderProfile(user.profile)}
+АДАПТАЦИЯ:
+${hint.summary} | ${hint.instruction}
+Контекст:
+${girl.ctx}
+Заметки:
+${renderGirlNotes(girl)}
 `.trim();
 
     return askLLM(prompt);
@@ -588,6 +690,154 @@ ${herMessage}
       : '';
   }
 
+  async function executeCommand(userId, raw) {
+    const trimmed = (raw || '').trim();
+    if (!trimmed.startsWith('/')) throw new Error('Команда должна начинаться с "/"');
+    const [cmd, ...rest] = trimmed.split(' ');
+    const args = rest.join(' ').trim();
+
+    switch (cmd) {
+      case '/girls': {
+        const names = listGirls(userId);
+        const { key } = getActiveGirl(userId);
+        return { message: `Девушки: ${names.join(', ')}\nАктивная: ${key}`, data: { girls: names, active: key } };
+      }
+      case '/girl': {
+        if (!args) throw new Error('Пример: /girl anya');
+        const { key, girl } = setActiveGirl(userId, args);
+        return {
+          message: `Ок. Активная: ${key}\nКонтекст: ${girl.ctx}\nNotes: ${(girl.notes || []).length}\nСтадия: ${girl.stage}\nSuccess: ${scoreText(girl.conv)}`,
+          data: { key, girl },
+        };
+      }
+      case '/ctx': {
+        if (!args) throw new Error('Пример: /ctx познакомились в инсте, любит кофе');
+        const ctxText = setContext(userId, args);
+        return { message: 'Контекст сохранён.', data: { context: ctxText } };
+      }
+      case '/reset': {
+        const { key } = resetGirl(userId);
+        return { message: `Ок. История и тред очищены для "${key}"`, data: { key } };
+      }
+      case '/notes': {
+        const { key, notes } = listGirlNotes(userId);
+        const last = (notes || []).slice(-12);
+        const message = last.length
+          ? `Заметки "${key}" (последние):\n${last.map((n, i) => `• ${i + 1}) ${n.text}`).join('\n')}`
+          : `У "${key}" пока нет заметок. Добавь: /note ...`;
+        return { message, data: { key, notes: last } };
+      }
+      case '/note': {
+        if (!args) throw new Error('Пример: /note любит кофе, не любит пассивную агрессию');
+        const { key, girl } = addGirlNote(userId, args);
+        return { message: `Сохранил заметку для "${key}". Всего notes: ${girl.notes.length}`, data: { key, notes: girl.notes } };
+      }
+      case '/analyze': {
+        const out = await analyzeLastMessage(userId);
+        return { message: out, data: { analysis: out } };
+      }
+      case '/flags': {
+        const out = await flags(userId);
+        return { message: out, data: { flags: out } };
+      }
+      case '/dateplan': {
+        const out = await datePlan(userId);
+        return { message: out, data: { plan: out } };
+      }
+      case '/stats': {
+        const res = getStats(userId);
+        return { message: JSON.stringify(res, null, 2), data: res };
+      }
+      case '/gstats': {
+        const res = getGstats(userId);
+        return { message: JSON.stringify(res, null, 2), data: res };
+      }
+      case '/score': {
+        return { message: `Success Score (общий): ${getScore(userId)}`, data: { score: getScore(userId) } };
+      }
+      case '/gscore': {
+        const res = getGscore(userId);
+        return { message: `Success Score по "${res.girl}": ${res.score}`, data: res };
+      }
+      case '/modes': {
+        const res = getModes(userId);
+        return { message: `Стратегии (общие):\n${res.lines}\n\nТоп сейчас: ${res.bestMode}`, data: res };
+      }
+      case '/gmodes': {
+        const res = getGModes(userId);
+        return { message: `Стратегии по "${res.girl}":\n${res.report.lines}\n\nТоп сейчас: ${res.report.bestMode}`, data: res };
+      }
+      case '/autopick': {
+        if (!args) return { message: `Сейчас autopick: ${getStatus(userId).settings.autopick ? 'ON' : 'OFF'}` };
+        const enabled = args === 'on' || args === 'true' || args === '1';
+        setAutopick(userId, enabled);
+        return { message: `A/B autopick: ${enabled ? 'ON' : 'OFF'}`, data: { enabled } };
+      }
+      case '/autoghost': {
+        if (!args) return { message: `Сейчас autoghost: ${getStatus(userId).settings.autoghostHours}h` };
+        if (args === 'off') {
+          setAutoghost(userId, 0);
+          return { message: 'Autoghost выключен.', data: { hours: 0 } };
+        }
+        const hours = setAutoghost(userId, args);
+        return { message: `Autoghost: ${hours}h`, data: { hours } };
+      }
+      case '/pacing': {
+        if (!args) return { message: `Сейчас pacing: ${getStatus(userId).settings.pacing}` };
+        const pacing = setPacing(userId, args);
+        return { message: `Pacing: ${pacing}`, data: { pacing } };
+      }
+      case '/learn': {
+        if (!args) return { message: `Сейчас learning: ${getStatus(userId).learning.enabled ? 'ON' : 'OFF'}` };
+        const enabled = setLearning(userId, args === 'on');
+        return { message: `Learning: ${enabled ? 'ON' : 'OFF'}`, data: { enabled } };
+      }
+      case '/learn_debug': {
+        if (!args) return { message: `Сейчас learn_debug: ${getStatus(userId).learning.debug ? 'ON' : 'OFF'}` };
+        const enabled = setLearnDebug(userId, args === 'on');
+        return { message: `Learn debug: ${enabled ? 'ON' : 'OFF'}`, data: { enabled } };
+      }
+      case '/reset_learn': {
+        const weights = resetLearning(userId);
+        return { message: 'Learning сброшен к дефолту.', data: { weights } };
+      }
+      case '/profile': {
+        const profile = getProfile(userId);
+        return { message: JSON.stringify(profile, null, 2), data: profile };
+      }
+      case '/tune': {
+        const [key, value] = args.split(/\s+/);
+        if (!key || value === undefined) throw new Error('Пример: /tune warmth 0.8');
+        const tuned = tuneWeight(userId, key, value);
+        return { message: `OK. ${key}=${tuned.toFixed(2)}`, data: { key, value: tuned } };
+      }
+      case '/sent': {
+        if (!args) throw new Error('Пример: /sent я тоже люблю кофе');
+        const res = commitReply(userId, { text: args });
+        return { message: 'Ок. Сохранил твоё сообщение как "Я:" + увеличил sent и открыл/обновил тред.', data: res };
+      }
+      case '/reengage': {
+        const hours = args ? Number(args) : 24;
+        const out = await reengage(userId, Number.isFinite(hours) ? hours : 24);
+        return { message: out, data: { hours } };
+      }
+      case '/ice': {
+        const out = await ice(userId);
+        return { message: out, data: { ice: out } };
+      }
+      case '/export': {
+        const data = exportData();
+        return { message: 'Экспорт готов.', data: { export: data, filePath: getDataFile() } };
+      }
+      case '/backup': {
+        const backup = backupData();
+        return { message: `Бэкап создан: ${backup.name}`, data: backup };
+      }
+      default:
+        throw new Error('Неизвестная команда');
+    }
+  }
+
   return {
     askLLM,
     analyzeLastMessage,
@@ -615,5 +865,10 @@ ${herMessage}
     tuneWeight,
     tweakReplies,
     exportData,
+    executeCommand,
+    flags,
+    datePlan,
+    ice,
+    reengage,
   };
 }
