@@ -1,17 +1,6 @@
 - name: Setup SSH
   run: |
     mkdir -p ~/.ssh
-    echo "${{ secrets.SSH_KEY }}" > ~/.ssh/github_actions
-    chmod 600 ~/.ssh/github_actions
-    ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-- name: Deploy to server
-  run: |
-    ssh -i ~/.ssh/github_actions -p ${{ secrets.SSH_PORT }} \
-    ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-      set -e
-      cd /root/dm-copilot-bot
-      git pull origin main
-      npm install --omit=dev
-      pm2 restart dm-copilot --update-env
-    EOF
+    echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+    chmod 600 ~/.ssh/id_rsa
+    ssh-keyscan -p ${{ secrets.SSH_PORT || 22 }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
